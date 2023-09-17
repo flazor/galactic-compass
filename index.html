@@ -1,19 +1,13 @@
 <html>
   <head>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.0.0/aframe.min.js"></script>
     <script src="script.js" defer></script>
   </head>
 
   <body onload="loadBG();">
-    <a-scene vr-mode-ui="enabled: true">
+    <a-scene vr-mode-ui="cardboardModeEnabled: true">
       <a-camera look-controls="touchEnabled: false"></a-camera>
-      <a-assets>
-        <img
-          id="sky"
-          src="https://cdn.glitch.global/d246730e-3a9d-4b3d-9947-dd7dde1bb3a8/starmap_2020_4k_gal_print.jpg?v=1688725956411"
-        />
-      </a-assets>
-      <a-sky id="a-sky" src="#sky"></a-sky>
+      <a-sky id="a-sky" src="https://cdn.glitch.global/d246730e-3a9d-4b3d-9947-dd7dde1bb3a8/starmap_2020_4k_gal_print.jpg?v=1688725956411"></a-sky>
     </a-scene>
   </body>
 </html>
