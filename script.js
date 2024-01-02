@@ -1,3 +1,13 @@
+
+AFRAME.registerComponent('button', {
+  init() {
+    const btn = document.getElementById('reloadButton')
+    btn.addEventListener('click', () => {
+      location.reload();
+    })
+  }
+})
+
 function toRadians(degrees) {
   return degrees * (Math.PI / 180);
 }
@@ -27,7 +37,6 @@ function rotateBG(evt) {
       document.getElementById("a-sky").object3D.rotateY(toRadians(compassCorrection));
     }
 
-    // 53.26606925, -6.25
     var rotations = current_milky_way_position(lat, lon, new Date());
     //// To Orient the Galactic center
     // Rotate Y by negative Azimuth of Sag3
