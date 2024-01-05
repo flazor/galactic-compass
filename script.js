@@ -28,7 +28,12 @@ function rotateBG(evt) {
     const lat = position.coords.latitude;
     const lon = position.coords.longitude;
     console.log(`Latitude: ${lat}, Longitude: ${lon}`);
-
+    let sunLoc = SunCalc.getPosition(new Date(), lat, lon);
+    console.log("sun alt: " + toDegrees(sunLoc.altitude));
+    console.log("sun az: " + toDegrees(sunLoc.azimuth + Math.PI));
+    let moonLoc = SunCalc.getMoonPosition(new Date(), lat, lon);
+    console.log("moon alt: " + toDegrees(moonLoc.altitude));
+    console.log("moon az: " + toDegrees(moonLoc.azimuth + Math.PI));
     if (heading != undefined) {
       const portrait = window.matchMedia("(orientation: portrait)").matches;
       var compassCorrection = (portrait) ? heading - 90 : heading;
@@ -45,6 +50,18 @@ function rotateBG(evt) {
     document.getElementById("a-sky").object3D.rotateZ(toRadians(-rotations[1]));
     // Rotate pole by angle between rotated galactic north pole and Com31, aligning the galactic plane
     document.getElementById("a-sky").object3D.rotateX(toRadians(-rotations[2]));
+
+    // Sun
+    // Correct for the direction that the viewer is facing
+    document.getElementById("sun-container").object3D.rotateY(toRadians(compassCorrection));
+    document.getElementById("moon-container").object3D.rotateY(toRadians(compassCorrection));
+    document.getElementById("compass-container").object3D.rotateY(toRadians(compassCorrection));
+    // sunLoc uses 0 deg for south to add 180 deg (PI radians) to adjust to north
+    console.log("rotate:"+(sunLoc.azimuth + Math.PI))
+    document.getElementById("sun-container").object3D.rotateY(-sunLoc.azimuth + Math.PI / 2);
+    document.getElementById("sun-container").object3D.rotateX(-sunLoc.altitude);
+    document.getElementById("moon-container").object3D.rotateY(-moonLoc.azimuth + Math.PI / 2);
+    document.getElementById("moon-container").object3D.rotateX(-moonLoc.altitude);
 
   });
 }
