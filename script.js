@@ -9,20 +9,40 @@ AFRAME.registerComponent('button', {
 })
 
 function preloadStarmap() {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = function() {
-    console.log('Starmap cached successfully');
-    const sky = document.getElementById('a-sky');
-    if (sky) {
-      sky.setAttribute('src', this.src);
-    }
-  };
-  img.onerror = function() {
-    console.error('Failed to cache starmap image');
-  };
-  img.src = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
-  return img;
+  const imageUrl = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
+  const cacheKey = 'starmap_cached_url';
+  
+  // Check if we have a cached version
+  const cachedUrl = localStorage.getItem(cacheKey);
+  if (cachedUrl) {
+    console.log('Loading starmap from cache');
+    setStarmapSrc(cachedUrl);
+    return;
+  }
+  
+  console.log('Downloading and caching starmap...');
+  fetch(imageUrl)
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.blob();
+    })
+    .then(blob => {
+      const objectUrl = URL.createObjectURL(blob);
+      localStorage.setItem(cacheKey, objectUrl);
+      console.log('Starmap cached successfully');
+      setStarmapSrc(objectUrl);
+    })
+    .catch(error => {
+      console.error('Failed to cache starmap, using direct URL:', error);
+      setStarmapSrc(imageUrl);
+    });
+}
+
+function setStarmapSrc(src) {
+  const sky = document.getElementById('a-sky');
+  if (sky) {
+    sky.setAttribute('src', src);
+  }
 }
 
 function toRadians(degrees) {
