@@ -8,6 +8,23 @@ AFRAME.registerComponent('button', {
   }
 })
 
+function preloadStarmap() {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    console.log('Starmap cached successfully');
+    const sky = document.getElementById('a-sky');
+    if (sky) {
+      sky.setAttribute('src', this.src);
+    }
+  };
+  img.onerror = function() {
+    console.error('Failed to cache starmap image');
+  };
+  img.src = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
+  return img;
+}
+
 function toRadians(degrees) {
   return degrees * (Math.PI / 180);
 }
@@ -17,6 +34,7 @@ function toDegrees(radians) {
 }
 
 function loadBG() {
+  preloadStarmap();
   window.addEventListener("deviceorientation", rotateBG, {once: true} );
 }
 
