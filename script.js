@@ -8,34 +8,102 @@ AFRAME.registerComponent('button', {
   }
 })
 
+let starmapCache = null;
+
 function preloadStarmap() {
   const imageUrl = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
-  const cacheKey = 'starmap_cached_url';
+  const cacheKey = 'starmap_cache';
+  const cacheVersionKey = 'starmap_cache_version';
+  const currentVersion = '1.0';
   
-  // Check if we have a cached version
-  const cachedUrl = localStorage.getItem(cacheKey);
-  if (cachedUrl) {
-    console.log('Loading starmap from cache');
-    setStarmapSrc(cachedUrl);
-    return;
+  // Check if we have a cached version with correct version
+  if ('indexedDB' in window) {
+    loadFromIndexedDB(cacheKey, cacheVersionKey, currentVersion, imageUrl);
+  } else {
+    // Fallback to direct loading with browser cache headers
+    console.log('IndexedDB not available, using browser cache');
+    loadWithCacheHeaders(imageUrl);
   }
+}
+
+function loadFromIndexedDB(cacheKey, versionKey, currentVersion, imageUrl) {
+  const request = indexedDB.open('StarmapCache', 1);
   
-  console.log('Downloading and caching starmap...');
-  fetch(imageUrl)
+  request.onerror = () => {
+    console.log('IndexedDB error, falling back to direct load');
+    loadWithCacheHeaders(imageUrl);
+  };
+  
+  request.onupgradeneeded = (event) => {
+    const db = event.target.result;
+    if (!db.objectStoreNames.contains('images')) {
+      db.createObjectStore('images');
+    }
+  };
+  
+  request.onsuccess = (event) => {
+    const db = event.target.result;
+    const transaction = db.transaction(['images'], 'readonly');
+    const store = transaction.objectStore('images');
+    const getRequest = store.get(cacheKey);
+    
+    getRequest.onsuccess = () => {
+      const cached = getRequest.result;
+      if (cached && cached.version === currentVersion) {
+        console.log('Loading starmap from IndexedDB cache');
+        const objectUrl = URL.createObjectURL(cached.blob);
+        starmapCache = objectUrl;
+        setStarmapSrc(objectUrl);
+      } else {
+        console.log('Cache miss or outdated, downloading starmap...');
+        downloadAndCache(db, cacheKey, currentVersion, imageUrl);
+      }
+    };
+    
+    getRequest.onerror = () => {
+      console.log('Cache read error, downloading starmap...');
+      downloadAndCache(db, cacheKey, currentVersion, imageUrl);
+    };
+  };
+}
+
+function downloadAndCache(db, cacheKey, version, imageUrl) {
+  fetch(imageUrl, {
+    cache: 'force-cache'
+  })
     .then(response => {
       if (!response.ok) throw new Error('Network response was not ok');
       return response.blob();
     })
     .then(blob => {
+      // Store in IndexedDB
+      const transaction = db.transaction(['images'], 'readwrite');
+      const store = transaction.objectStore('images');
+      store.put({ blob: blob, version: version }, cacheKey);
+      
+      console.log('Starmap cached in IndexedDB');
       const objectUrl = URL.createObjectURL(blob);
-      localStorage.setItem(cacheKey, objectUrl);
-      console.log('Starmap cached successfully');
+      starmapCache = objectUrl;
       setStarmapSrc(objectUrl);
     })
     .catch(error => {
-      console.error('Failed to cache starmap, using direct URL:', error);
+      console.error('Failed to cache starmap:', error);
       setStarmapSrc(imageUrl);
     });
+}
+
+function loadWithCacheHeaders(imageUrl) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    console.log('Starmap loaded with browser cache');
+    setStarmapSrc(this.src);
+  };
+  img.onerror = function() {
+    console.error('Failed to load starmap image');
+  };
+  // Add cache-busting prevention and cache headers
+  img.src = imageUrl + '?cache=max-age';
 }
 
 function setStarmapSrc(src) {
