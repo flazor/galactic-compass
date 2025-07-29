@@ -18,6 +18,18 @@ function toDegrees(radians) {
 
 function loadBG() {
   window.addEventListener("deviceorientation", rotateBG, {once: true} );
+  
+  // Preload high-resolution starmap in background
+  const highResImage = new Image();
+  highResImage.onload = function() {
+    console.log('High-res starmap loaded, upgrading sky texture');
+    const skyElement = document.getElementById('a-sky');
+    skyElement.setAttribute('src', 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg');
+  };
+  highResImage.onerror = function() {
+    console.warn('Failed to load high-res starmap, keeping low-res version');
+  };
+  highResImage.src = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
 }
 
 function rotateBG(evt) {
