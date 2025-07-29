@@ -1,1 +1,3 @@
 .httpd_conf
+cert.pem
+key.pem

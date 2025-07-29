@@ -21,10 +21,10 @@
         <a-sphere id="sun-sphere" color="#FFFFDD" position="0 0 1000" radius="30"></a-sphere>
       </a-entity>
       <a-entity id="compass-container">
-        <a-sphere id="east" color="#FF00FF" position="0 0 -1000" radius="10"></a-sphere>
-        <a-sphere id="west" color="#00FF00" position="0 0 1000" radius="10"></a-sphere>
-        <a-sphere id="south" color="#0000FF" position="1000 0 0" radius="10" shadow="receive: false"></a-sphere>
-        <a-sphere id="north" color="#FF0000" position="-1000 0 0" radius="10"></a-sphere>
+        <a-text id="east" value="E" color="#FF0000" position="0 20 -1000" scale="200 200 200" rotation="0 0 0"></a-text>
+        <a-text id="west" value="W" color="#FF0000" position="0 20 1000" scale="200 200 200" rotation="0 180 0"></a-text>
+        <a-text id="south" value="S" color="#FF0000" position="1000 20 0" scale="200 200 200" rotation="0 -90 0"></a-text>
+        <a-text id="north" value="N" color="#FF0000" position="-1000 20 0" scale="200 200 200" rotation="0 90 0"></a-text>
       </a-entity>
     </a-scene>
   </body>
