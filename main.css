@@ -1,8 +1,10 @@
-#reloadButton {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  font-size: 16px;
+button {
+  padding: 5px 7px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  border: 1px solid white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 9999;
 }
-
