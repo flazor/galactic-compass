@@ -5,6 +5,14 @@ AFRAME.registerComponent('button', {
     btn.addEventListener('click', () => {
       location.reload();
     })
+
+    // Hi-res button functionality
+    const hiResBtn = document.getElementById('hiResButton')
+    if (hiResBtn) {
+      hiResBtn.addEventListener('click', () => {
+        loadHighResImage();
+      })
+    }
   }
 })
 
@@ -19,17 +27,57 @@ function toDegrees(radians) {
 
 function loadBG() {
   window.addEventListener("deviceorientation", rotateBG, {once: true} );
+}
+
+function loadHighResImage() {
+  const hiResBtn = document.getElementById('hiResButton');
+  const loadingIndicator = document.getElementById('loading-indicator');
   
-  // Preload high-resolution starmap in background
+  // Update button to show loading state
+  hiResBtn.textContent = 'Loading...';
+  hiResBtn.disabled = true;
+  
+  // Show loading indicator if it exists
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'block';
+  }
+  
+  // Load high-resolution starmap
   const highResImage = new Image();
   highResImage.onload = function() {
     console.log('High-res starmap loaded, upgrading sky texture');
     const skyElement = document.getElementById('a-sky');
+    
+    // Listen for the actual texture update completion
+    const waitForTextureUpdate = () => {
+      const material = skyElement.getObject3D('mesh').material;
+      if (material && material.map && material.map.image && material.map.image.src.includes('8k')) {
+        // Texture is actually updated, now confirm
+        setTimeout(() => {
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          hiResBtn.textContent = 'Hi-Res ✓';
+          hiResBtn.style.background = 'rgba(0,128,0,0.8)'; // Green background
+        }, 500); // Small delay to ensure GPU has processed the texture
+      } else {
+        // Check again in a short while
+        setTimeout(waitForTextureUpdate, 100);
+      }
+    };
+    
     skyElement.setAttribute('src', 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg');
+    
+    // Start checking for texture update
+    setTimeout(waitForTextureUpdate, 100);
   };
+  
   highResImage.onerror = function() {
     console.warn('Failed to load high-res starmap, keeping low-res version');
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    hiResBtn.textContent = 'Hi-Res ✗';
+    hiResBtn.style.background = 'rgba(128,0,0,0.8)'; // Red background
+    hiResBtn.disabled = false;
   };
+  
   highResImage.src = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
 }
 
