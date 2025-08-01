@@ -26,7 +26,7 @@ function toDegrees(radians) {
 }
 
 function loadBG() {
-  window.addEventListener("deviceorientation", rotateBG, {once: true} );
+  window.addEventListener("deviceorientation", rotateBG);
 }
 
 function loadHighResImage() {
@@ -81,11 +81,24 @@ function loadHighResImage() {
   highResImage.src = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
 }
 
+let compassAttempts = 0;
+
 function rotateBG(evt) {
+  compassAttempts++;
+  const heading = evt.webkitCompassHeading;
+  
+  // Wait for a valid non-zero heading (iOS compass needs time to calibrate)
+  if (heading == undefined || isNaN(heading) || heading === 0) {
+    document.getElementById('debugOutput').innerHTML = `Waiting for compass calibration... (attempt ${compassAttempts})`;
+    return; // Keep listening for more orientation events
+  }
+  
+  // Got a valid heading, proceed with setup
+  window.removeEventListener("deviceorientation", rotateBG);
+  document.getElementById('debugOutput').innerHTML = `Compass ready: ${heading}°`;
+  console.log(`Compass heading: ${heading}°`);
   
   navigator.geolocation.getCurrentPosition(function(position) {
-    const heading = evt.webkitCompassHeading;
-    console.log(`Heading: ${heading}`);
     const lat = position.coords.latitude;
     const lon = position.coords.longitude;
     console.log(`Latitude: ${lat}, Longitude: ${lon}`);
@@ -95,13 +108,12 @@ function rotateBG(evt) {
     let moonLoc = SunCalc.getMoonPosition(new Date(), lat, lon);
     console.log("moon alt: " + toDegrees(moonLoc.altitude));
     console.log("moon az: " + toDegrees(moonLoc.azimuth + Math.PI));
-    if (heading != undefined) {
-      const portrait = window.matchMedia("(orientation: portrait)").matches;
-      var compassCorrection = (portrait) ? heading - 90 : heading;
+    
+    const portrait = window.matchMedia("(orientation: portrait)").matches;
+    var compassCorrection = (portrait) ? heading - 90 : heading;
 
-      // Rotate Y by negative Azimuth of heading to correct for north
-      document.getElementById("a-sky").object3D.rotateY(toRadians(compassCorrection));
-    }
+    // Rotate Y by negative Azimuth of heading to correct for north
+    document.getElementById("a-sky").object3D.rotateY(toRadians(compassCorrection));
 
     var rotations = current_milky_way_position(lat, lon, new Date());
     //// To Orient the Galactic center
