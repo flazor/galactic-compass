@@ -124,8 +124,8 @@ function rotateBG(evt) {
     // Rotate pole by angle between rotated galactic north pole and Com31, aligning the galactic plane
     document.getElementById("a-sky").object3D.rotateX(toRadians(-rotations[2]));
 
-    // Sun
-    // Correct for the direction that the viewer is facing
+    // Correct for the direction that the viewer is facing. This must be done before other rotations
+    document.getElementById("milky-way-container").object3D.rotateY(toRadians(compassCorrection));
     document.getElementById("sun-container").object3D.rotateY(toRadians(compassCorrection));
     document.getElementById("moon-container").object3D.rotateY(toRadians(compassCorrection));
     document.getElementById("compass-container").object3D.rotateY(toRadians(compassCorrection));
@@ -135,6 +135,11 @@ function rotateBG(evt) {
     document.getElementById("sun-container").object3D.rotateX(-sunLoc.altitude);
     document.getElementById("moon-container").object3D.rotateY(-moonLoc.azimuth + Math.PI / 2);
     document.getElementById("moon-container").object3D.rotateX(-moonLoc.altitude);
+
+    document.getElementById("milky-way-container").object3D.rotateY(toRadians(-rotations[0]));
+    document.getElementById("milky-way-container").object3D.rotateZ(toRadians(-rotations[1]));
+    document.getElementById("milky-way-container").object3D.rotateX(toRadians(-rotations[2]));
+
 
   });
 }

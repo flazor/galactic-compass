@@ -18,9 +18,15 @@
       <a-entity light="type: ambient; color: #BBB"></a-entity>
       <a-camera look-controls="touchEnabled: false"></a-camera>
       <a-sky id="a-sky" src="https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg"></a-sky>
-      <a-circle position="0 0 0" rotation="-90 0 0" radius="900" color="blue" material="transparent: true; opacity: 0.1"></a-circle>
+      <a-circle id="earth-surface" position="0 0 0" rotation="-90 0 0" radius="900" color="blue" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
+
+      <a-entity id="milky-way-container">
+        <a-circle id="galactic-plane" position="0 0 0" rotation="-90 0 0" radius="1000" color="purple" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
+        <a-sphere id="black-hole-sphere" color="#DD33DD" position="-490 0 0" radius="3"></a-sphere>
+        <a-sphere id="solar-system-orbit-dir" color="#DD99DD" position="0 0 -490" radius="3"></a-sphere>
+      </a-entity>
       <a-entity id="moon-container">
-        <a-sphere id="moon-sphere" color="#DDDDDD" position="0 0 490" radius="14"></a-sphere>
+        <a-sphere id="moon-sphere" color="#DDDDDD" position="0 0 490" radius="13"></a-sphere>
       </a-entity>
       <a-entity id="sun-container">
         <a-entity position="0 0 450" light="type:directional; castShadow:true;"></a-entity>
