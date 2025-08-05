@@ -117,9 +117,9 @@ function rotateBG(evt) {
 
     var rotations = current_milky_way_position(lat, lon, new Date());
     //// To Orient the Galactic center
-    // Rotate Y by negative Azimuth of Sag3
+    // Rotate Y by negative Azimuth of sagA
     document.getElementById("a-sky").object3D.rotateY(toRadians(-rotations[0]));
-    // Rotate Z by negative Altitude of Sag3, aligning the center of the galaxy
+    // Rotate Z by negative Altitude of sagA, aligning the center of the galaxy
     document.getElementById("a-sky").object3D.rotateZ(toRadians(-rotations[1]));
     // Rotate pole by angle between rotated galactic north pole and Com31, aligning the galactic plane
     document.getElementById("a-sky").object3D.rotateX(toRadians(-rotations[2]));
@@ -140,32 +140,34 @@ function rotateBG(evt) {
 }
 
 function current_milky_way_position(lat, lon, utc_datetime = null) {
-  var angle, com31_pos, galactic_north_pole_alt, galactic_north_pole_az, sag3_pos;
+  var angle, com31_pos, galactic_north_pole_alt, galactic_north_pole_az, sagA_pos;
 
   if (utc_datetime === null) {
     utc_datetime = new Date();
   }
-
-  sag3_pos = calculate_star_location(lat, lon, 17.75, -27.5, utc_datetime);
-  console.log(`sag3 pos: az: ${sag3_pos[1]}, alt: ${sag3_pos[0]}`);
+  // The center of the milky way is located at Sagittarius A*
+  // Right ascension: 17h 45m 40.0409s
+  // Declination: −29° 0′ 28.118″
+  sagA_pos = calculate_star_location(lat, lon, 17.7611, -28.992, utc_datetime);
+  console.log(`sagA pos: az: ${sagA_pos[1]}, alt: ${sagA_pos[0]}`);
   com31_pos = calculate_star_location(lat, lon, 12.81, 27.4, utc_datetime);
   console.log(`com31 pos: az: ${com31_pos[1]}, alt: ${com31_pos[0]}`);
 
-  if (sag3_pos[0] < 0) {
-    galactic_north_pole_az = sag3_pos[1];
-    galactic_north_pole_alt = 90 + sag3_pos[0];
+  if (sagA_pos[0] < 0) {
+    galactic_north_pole_az = sagA_pos[1];
+    galactic_north_pole_alt = 90 + sagA_pos[0];
   } else {
-    galactic_north_pole_az = sag3_pos[1] + 180;
-    galactic_north_pole_alt = 90 - sag3_pos[0];
+    galactic_north_pole_az = sagA_pos[1] + 180;
+    galactic_north_pole_alt = 90 - sagA_pos[0];
   }
 
   console.log(`gal_np pos: az: ${galactic_north_pole_az}, alt: ${galactic_north_pole_alt}`);
   angle = angle_between_points(galactic_north_pole_az, galactic_north_pole_alt, com31_pos[1], com31_pos[0]);
   console.log(`angle to rotate: ${angle}`);
-  console.log(`ROTATE Y: ${sag3_pos[1]}`);
-  console.log(`ROTATE Z: ${sag3_pos[0]}`);
+  console.log(`ROTATE Y: ${sagA_pos[1]}`);
+  console.log(`ROTATE Z: ${sagA_pos[0]}`);
   console.log(`ROTATE X: ${angle}`);
-  return [sag3_pos[1], sag3_pos[0], angle];
+  return [sagA_pos[1], sagA_pos[0], angle];
 }
 
 function calculate_star_location(obs_lat_deg, obs_lon_deg, star_ra_hrs, star_dec_deg, utc_datetime = null) {
