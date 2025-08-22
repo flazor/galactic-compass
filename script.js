@@ -13,6 +13,7 @@ AFRAME.registerComponent('button', {
         loadHighResImage();
       })
     }
+
   }
 })
 
@@ -25,11 +26,200 @@ function toDegrees(radians) {
   return radians / (Math.PI / 180);
 }
 
+// Preload and cache images for iOS
+const imageCache = {};
+
+async function cacheAllAssets() {
+  const assetsToCache = [
+    { url: 'main.css', type: 'text' },
+    { url: 'aframe.min.js', type: 'text' },
+    { url: 'suncalc.js', type: 'text' },
+    { url: 'script.js', type: 'text' },
+    { url: 'img/starmap_2020_1k_gal.jpg', type: 'image' }
+    // Don't preload hi-res image
+  ];
+  
+  for (const asset of assetsToCache) {
+    const cachedKey = `cached_${asset.url}`;
+    const cached = localStorage.getItem(cachedKey);
+    
+    if (cached) {
+      if (asset.type === 'image') {
+        imageCache[asset.url] = cached;
+      }
+      console.log('Loaded cached asset from localStorage:', asset.url);
+      continue;
+    }
+    
+    try {
+      if (asset.type === 'image') {
+        // Handle images with canvas conversion
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+            imageCache[asset.url] = dataURL;
+            localStorage.setItem(cachedKey, dataURL);
+            console.log('Cached image to localStorage:', asset.url);
+          } catch (error) {
+            console.error('Failed to cache image:', asset.url, error);
+          }
+        };
+        img.onerror = () => console.error('Failed to load image:', asset.url);
+        img.src = asset.url;
+      } else {
+        // Handle text assets (CSS, JS)
+        const response = await fetch(asset.url);
+        const text = await response.text();
+        localStorage.setItem(cachedKey, text);
+        console.log('Cached text asset to localStorage:', asset.url);
+      }
+    } catch (error) {
+      console.error('Failed to cache asset:', asset.url, error);
+    }
+  }
+}
+
+// Simple IndexedDB wrapper for storing large images
+function openImageDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('GalacticCompassDB', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('images')) {
+        db.createObjectStore('images', { keyPath: 'url' });
+      }
+    };
+  });
+}
+
+async function getImageFromDB(url) {
+  const db = await openImageDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['images'], 'readonly');
+    const store = transaction.objectStore('images');
+    const request = store.get(url);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result ? request.result.dataURL : null);
+  });
+}
+
+async function saveImageToDB(url, dataURL) {
+  const db = await openImageDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['images'], 'readwrite');
+    const store = transaction.objectStore('images');
+    const request = store.put({ url, dataURL });
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
+}
+
+async function cacheHiResImage() {
+  const hiResUrl = 'img/starmap_2020_8k_gal.jpg';
+  
+  debugLog('Checking IndexedDB cache for hi-res image');
+  
+  try {
+    // Check if already cached in IndexedDB
+    const cached = await getImageFromDB(hiResUrl);
+    if (cached) {
+      debugLog('Found cached hi-res image in IndexedDB');
+      imageCache[hiResUrl] = cached;
+      return cached;
+    }
+    
+    debugLog('No cached image, loading from network');
+    
+    // If not cached, load and cache it
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          debugLog('Hi-res image loaded, creating canvas');
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          const dataURL = canvas.toDataURL('image/jpeg');
+          imageCache[hiResUrl] = dataURL;
+          await saveImageToDB(hiResUrl, dataURL);
+          debugLog('Cached hi-res image to IndexedDB');
+          resolve(dataURL);
+        } catch (error) {
+          debugLog('ERROR caching hi-res image: ' + error.message);
+          reject(error);
+        }
+      };
+      img.onerror = () => {
+        debugLog('ERROR loading hi-res image from network');
+        reject(new Error('Failed to load hi-res image'));
+      };
+      img.src = hiResUrl;
+      debugLog('Started loading hi-res image: ' + hiResUrl);
+    });
+  } catch (error) {
+    debugLog('ERROR with IndexedDB: ' + error.message);
+    throw error;
+  }
+}
+
 function loadBG() {
+  // Cache all assets for offline use
+  cacheAllAssets();
+  
+  // Update initial skybox if cached image exists
+  setTimeout(() => {
+    const skyElement = document.getElementById('a-sky');
+    const cachedLowRes = localStorage.getItem('cached_img/starmap_2020_1k_gal.jpg');
+    if (cachedLowRes && skyElement) {
+      skyElement.setAttribute('src', cachedLowRes);
+      console.log('Using cached low-res image for initial load');
+    }
+  }, 100);
+  
   window.addEventListener("deviceorientation", rotateBG);
 }
 
-function loadHighResImage() {
+let debugExpanded = false;
+
+function toggleDebugExpansion() {
+  const debugDiv = document.getElementById('debugOutput');
+  if (!debugDiv) return;
+  
+  debugExpanded = !debugExpanded;
+  
+  if (debugExpanded) {
+    debugDiv.style.maxHeight = '33vh';
+    debugDiv.style.width = '90vw';
+  } else {
+    debugDiv.style.maxHeight = '60px';
+    debugDiv.style.width = '90vw';
+  }
+}
+
+function debugLog(message) {
+  const debugDiv = document.getElementById('debugOutput');
+  if (debugDiv) {
+    if (debugDiv.innerHTML.includes('click to expand')) {
+      debugDiv.innerHTML = '';
+    }
+    debugDiv.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+    debugDiv.scrollTop = debugDiv.scrollHeight;
+  }
+}
+
+async function loadHighResImage() {
+  debugLog('Hi-Res button pressed');
+  
   const hiResBtn = document.getElementById('hiResButton');
   const loadingIndicator = document.getElementById('loading-indicator');
   
@@ -42,21 +232,26 @@ function loadHighResImage() {
     loadingIndicator.style.display = 'block';
   }
   
-  // Load high-resolution starmap
-  const highResImage = new Image();
-  highResImage.onload = function() {
-    console.log('High-res starmap loaded, upgrading sky texture');
+  try {
+    debugLog('Attempting to cache hi-res image...');
+    // Try to get hi-res image (from cache or network)
+    const imageSrc = await cacheHiResImage();
+    debugLog('Hi-res image ready, updating skybox');
+    
     const skyElement = document.getElementById('a-sky');
+    skyElement.setAttribute('src', imageSrc);
     
     // Listen for the actual texture update completion
     const waitForTextureUpdate = () => {
       const material = skyElement.getObject3D('mesh').material;
-      if (material && material.map && material.map.image && material.map.image.src.includes('8k')) {
-        // Texture is actually updated, now confirm
+      if (material && material.map && material.map.image) {
+        // Texture is updated
         setTimeout(() => {
           if (loadingIndicator) loadingIndicator.style.display = 'none';
           hiResBtn.textContent = 'Hi-Res ✓';
           hiResBtn.style.background = 'rgba(0,128,0,0.8)'; // Green background
+          hiResBtn.disabled = false; // Re-enable button
+          debugLog('Hi-res texture updated successfully');
         }, 500); // Small delay to ensure GPU has processed the texture
       } else {
         // Check again in a short while
@@ -64,21 +259,27 @@ function loadHighResImage() {
       }
     };
     
-    skyElement.setAttribute('src', 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg');
-    
     // Start checking for texture update
     setTimeout(waitForTextureUpdate, 100);
-  };
-  
-  highResImage.onerror = function() {
-    console.warn('Failed to load high-res starmap, keeping low-res version');
+    
+    // Fallback timeout in case texture detection fails
+    setTimeout(() => {
+      if (hiResBtn.textContent === 'Loading...') {
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        hiResBtn.textContent = 'Hi-Res';
+        hiResBtn.style.background = '';
+        hiResBtn.disabled = false;
+        debugLog('Hi-res load completed (fallback timeout)');
+      }
+    }, 5000); // 5 second fallback
+    
+  } catch (error) {
+    debugLog('ERROR in loadHighResImage: ' + error.message);
     if (loadingIndicator) loadingIndicator.style.display = 'none';
     hiResBtn.textContent = 'Hi-Res ✗';
     hiResBtn.style.background = 'rgba(128,0,0,0.8)'; // Red background
     hiResBtn.disabled = false;
-  };
-  
-  highResImage.src = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
+  }
 }
 
 let compassAttempts = 0;
@@ -252,3 +453,4 @@ function angle_between_points(az1, alt1, az2, alt2) {
   angle = 2 * Math.asin(Math.sqrt(haversine_alt + Math.cos(alt1) * Math.cos(alt2) * haversine_az));
   return toDegrees(angle);
 }
+

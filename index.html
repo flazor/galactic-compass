@@ -1,23 +1,28 @@
-<html manifest="cache.manifest">
+<html manifest="cache.appcache">
   <head>
     <link rel="stylesheet" href="main.css">
-    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <script src="aframe.min.js"></script>
     <script src="script.js" defer></script>
     <script src="suncalc.js" defer></script>
   </head>
 
   <body onload="loadBG();">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+      }
+    </script>
     <button id="reloadButton" style="position: fixed; top: 10px; left: 10px;">&#x21bb;</button>
     <button id="hiResButton" style="position: fixed; top: 10px; right: 10px;">
       Hi-Res
     </button>
-    <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 8px; font-size: 12px; max-width: 300px; z-index: 9999; font-family: monospace;">
-      Debug info will appear here...
+    <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 8px; font-size: 12px; width: 90vw; max-height: 60px; overflow-y: auto; z-index: 9999; font-family: monospace; cursor: pointer; transition: max-height 0.3s ease;" onclick="toggleDebugExpansion()">
+      Debug info will appear here... (click to expand)
     </div>
     <a-scene vr-mode-ui="enabled: false" button>
       <a-entity light="type: ambient; color: #BBB"></a-entity>
       <a-camera look-controls="touchEnabled: false"></a-camera>
-      <a-sky id="a-sky" src="https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg"></a-sky>
+      <a-sky id="a-sky" src="img/starmap_2020_1k_gal.jpg"></a-sky>
       <a-circle id="earth-surface" position="0 0 0" rotation="-90 0 0" radius="900" color="blue" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
 
       <a-entity id="milky-way-container">
@@ -29,8 +34,9 @@
         <a-sphere id="moon-sphere" color="#DDDDDD" position="0 0 490" radius="13"></a-sphere>
       </a-entity>
       <a-entity id="sun-container">
-        <a-entity position="0 0 450" light="type:directional; castShadow:true;"></a-entity>
-        <a-sphere id="sun-sphere" color="#FFFFDD" position="0 0 490" radius="15"></a-sphere>
+        <a-entity position="0 0 245" light="type:directional; castShadow:true;"></a-entity>
+        <a-sphere id="sun-sphere" color="#FFFFDD" position="0 0 245" radius="7"></a-sphere>
+        <a-circle id="ecliptic-plane" position="0 0 245" rotation="-90 0 0" radius="490" color="yellow" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
       </a-entity>
       <a-entity id="compass-container">
         <a-text id="east" value="E" color="#FF0000" position="0 20 -490" scale="100 100 100" rotation="0 0 0"></a-text>
@@ -39,5 +45,34 @@
         <a-text id="north" value="N" color="#FF0000" position="-490 20 0" scale="100 100 100" rotation="0 90 0"></a-text>
       </a-entity>
     </a-scene>
+<script>
+// Register Service Worker for offline functionality
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then((registration) => {
+        console.log('Service Worker registered successfully:', registration.scope);
+        
+        // Optional: Listen for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              console.log('New Service Worker activated');
+              // Optionally reload the page or show a notification
+              // window.location.reload();
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+} else {
+  console.log('Service Workers are not supported by this browser');
+}
+</script>
+
   </body>
 </html>
