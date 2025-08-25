@@ -37,7 +37,7 @@ async function cacheAllAssets() {
     { url: 'aframe.min.js', type: 'text' },
     { url: 'suncalc.js', type: 'text' },
     { url: 'script.js', type: 'text' },
-    { url: 'img/starmap_2020_1k_gal.jpg', type: 'image' }
+    { url: 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg', type: 'image' }
     // Don't preload hi-res image
   ];
   
@@ -57,6 +57,7 @@ async function cacheAllAssets() {
       if (asset.type === 'image') {
         // Handle images with canvas conversion
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         img.onload = () => {
           try {
             const canvas = document.createElement('canvas');
@@ -125,7 +126,7 @@ async function saveImageToDB(url, dataURL) {
 }
 
 async function cacheHiResImage() {
-  const hiResUrl = 'img/starmap_2020_8k_gal.jpg';
+  const hiResUrl = 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_8k_gal.jpg';
   
   debugLog('Checking IndexedDB cache for hi-res image');
   
@@ -143,21 +144,63 @@ async function cacheHiResImage() {
     // If not cached, load and cache it
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = async () => {
         try {
-          debugLog('Hi-res image loaded, creating canvas');
+          debugLog(`Hi-res image loaded: ${img.width}x${img.height}`);
+          debugLog(`Image file size estimate: ${(img.width * img.height * 4 / 1024 / 1024).toFixed(1)}MB`);
+          
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-          const dataURL = canvas.toDataURL('image/jpeg');
+          
+          if (!ctx) {
+            throw new Error('Could not get 2D context');
+          }
+          
+          // Check if image is too large for device and downscale if needed
+          let targetWidth = img.width;
+          let targetHeight = img.height;
+          const maxPixels = 16 * 1024 * 1024; // 16M pixels max for older devices
+          const currentPixels = img.width * img.height;
+          
+          if (currentPixels > maxPixels) {
+            const scale = Math.sqrt(maxPixels / currentPixels);
+            targetWidth = Math.floor(img.width * scale);
+            targetHeight = Math.floor(img.height * scale);
+            debugLog(`Downscaling from ${img.width}x${img.height} to ${targetWidth}x${targetHeight}`);
+          }
+          
+          debugLog('Setting canvas dimensions...');
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          debugLog(`Canvas created: ${canvas.width}x${canvas.height}`);
+          
+          debugLog('Drawing image to canvas...');
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+          
+          // Check if canvas drawing actually worked
+          const imageData = ctx.getImageData(0, 0, 1, 1);
+          debugLog(`Canvas pixel check: [${imageData.data[0]},${imageData.data[1]},${imageData.data[2]},${imageData.data[3]}]`);
+          
+          debugLog('Converting to data URL...');
+          const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+          const dataURLSize = (dataURL.length / 1024 / 1024).toFixed(1);
+          debugLog(`Data URL size: ${dataURLSize}MB`);
+          
+          // Check if toDataURL failed (returns empty or invalid data URL)
+          if (dataURL.length < 1000 || dataURL === 'data:,') {
+            debugLog('Data URL conversion failed even after downscaling');
+            throw new Error('Canvas toDataURL failed');
+          }
+          
           imageCache[hiResUrl] = dataURL;
+          debugLog('Saving to IndexedDB...');
           await saveImageToDB(hiResUrl, dataURL);
-          debugLog('Cached hi-res image to IndexedDB');
+          debugLog('Cached hi-res image to IndexedDB successfully');
           resolve(dataURL);
         } catch (error) {
           debugLog('ERROR caching hi-res image: ' + error.message);
+          debugLog('Stack: ' + error.stack);
           reject(error);
         }
       };
@@ -174,9 +217,46 @@ async function cacheHiResImage() {
   }
 }
 
+function checkDeviceCapabilities() {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Test canvas size limits
+  debugLog('Testing device capabilities...');
+  debugLog(`User Agent: ${navigator.userAgent}`);
+  debugLog(`Screen: ${screen.width}x${screen.height}`);
+  debugLog(`Device pixel ratio: ${devicePixelRatio}`);
+  debugLog(`Available memory: ${navigator.deviceMemory || 'unknown'}GB`);
+  
+  // Test maximum canvas dimensions
+  let maxCanvasSize = 8192;
+  try {
+    canvas.width = maxCanvasSize;
+    canvas.height = maxCanvasSize;
+    ctx.fillRect(0, 0, 1, 1);
+    debugLog(`Canvas ${maxCanvasSize}x${maxCanvasSize}: OK`);
+  } catch (e) {
+    debugLog(`Canvas ${maxCanvasSize}x${maxCanvasSize}: FAILED - ${e.message}`);
+    maxCanvasSize = 4096;
+    try {
+      canvas.width = maxCanvasSize;
+      canvas.height = maxCanvasSize;
+      ctx.fillRect(0, 0, 1, 1);
+      debugLog(`Canvas ${maxCanvasSize}x${maxCanvasSize}: OK`);
+    } catch (e2) {
+      debugLog(`Canvas ${maxCanvasSize}x${maxCanvasSize}: FAILED - ${e2.message}`);
+    }
+  }
+  
+  return { maxCanvasSize };
+}
+
 function loadBG() {
   // Version info for debugging
   debugLog(`Galactic Compass v${VERSION}`);
+  
+  // Check device capabilities first
+  checkDeviceCapabilities();
   
   // Cache all assets for offline use
   cacheAllAssets();
@@ -184,7 +264,7 @@ function loadBG() {
   // Update initial skybox if cached image exists
   setTimeout(() => {
     const skyElement = document.getElementById('a-sky');
-    const cachedLowRes = localStorage.getItem('cached_img/starmap_2020_1k_gal.jpg');
+    const cachedLowRes = localStorage.getItem('cached_https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg');
     if (cachedLowRes && skyElement) {
       skyElement.setAttribute('src', cachedLowRes);
       console.log('Using cached low-res image for initial load');
@@ -244,19 +324,21 @@ async function loadHighResImage() {
     debugLog('Hi-res image ready, updating skybox');
     
     const skyElement = document.getElementById('a-sky');
+    debugLog(`Setting skybox src to cached image (${imageSrc.length} chars)`);
     skyElement.setAttribute('src', imageSrc);
     
-    // Listen for the actual texture update completion
+    // Wait for texture to actually render (like original version)
     const waitForTextureUpdate = () => {
       const material = skyElement.getObject3D('mesh').material;
-      if (material && material.map && material.map.image) {
-        // Texture is updated
+      if (material && material.map && material.map.image && 
+          (material.map.image.src.includes('8k') || material.map.image.src.startsWith('data:'))) {
+        // Texture is actually updated with hi-res content
         setTimeout(() => {
           if (loadingIndicator) loadingIndicator.style.display = 'none';
           hiResBtn.textContent = 'Hi-Res ✓';
-          hiResBtn.style.background = 'rgba(0,128,0,0.8)'; // Green background
-          hiResBtn.disabled = false; // Re-enable button
-          debugLog('Hi-res texture updated successfully');
+          hiResBtn.style.background = 'rgba(0,128,0,0.8)'; // Green - successfully cached
+          hiResBtn.disabled = false;
+          debugLog('Hi-res texture rendered successfully');
         }, 500); // Small delay to ensure GPU has processed the texture
       } else {
         // Check again in a short while
@@ -271,10 +353,10 @@ async function loadHighResImage() {
     setTimeout(() => {
       if (hiResBtn.textContent === 'Loading...') {
         if (loadingIndicator) loadingIndicator.style.display = 'none';
-        hiResBtn.textContent = 'Hi-Res';
-        hiResBtn.style.background = '';
+        hiResBtn.textContent = 'Hi-Res ✗';
+        hiResBtn.style.background = 'rgba(128,0,0,0.8)'; // Red background
         hiResBtn.disabled = false;
-        debugLog('Hi-res load completed (fallback timeout)');
+        debugLog('Hi-res load failed (timeout)');
       }
     }, 5000); // 5 second fallback
     
