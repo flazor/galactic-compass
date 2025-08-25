@@ -1,4 +1,6 @@
 
+const VERSION = '0.1.1';
+
 AFRAME.registerComponent('button', {
   init() {
     const btn = document.getElementById('reloadButton')
@@ -173,6 +175,9 @@ async function cacheHiResImage() {
 }
 
 function loadBG() {
+  // Version info for debugging
+  debugLog(`Galactic Compass v${VERSION}`);
+  
   // Cache all assets for offline use
   cacheAllAssets();
   
@@ -201,7 +206,7 @@ function toggleDebugExpansion() {
     debugDiv.style.maxHeight = '33vh';
     debugDiv.style.width = '90vw';
   } else {
-    debugDiv.style.maxHeight = '60px';
+    debugDiv.style.maxHeight = '18px';
     debugDiv.style.width = '90vw';
   }
 }
@@ -290,14 +295,13 @@ function rotateBG(evt) {
   
   // Wait for a valid non-zero heading (iOS compass needs time to calibrate)
   if (heading == undefined || isNaN(heading) || heading === 0) {
-    document.getElementById('debugOutput').innerHTML = `Waiting for compass calibration... (attempt ${compassAttempts})`;
+    debugLog('Waiting for compass calibration... (attempt ' + compassAttempts + ')');
     return; // Keep listening for more orientation events
   }
   
   // Got a valid heading, proceed with setup
   window.removeEventListener("deviceorientation", rotateBG);
-  document.getElementById('debugOutput').innerHTML = `Compass ready: ${heading}°`;
-  console.log(`Compass heading: ${heading}°`);
+  debugLog('Compass ready: ' + heading);
   
   navigator.geolocation.getCurrentPosition(function(position) {
     const lat = position.coords.latitude;
