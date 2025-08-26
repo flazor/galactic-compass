@@ -49,7 +49,7 @@ async function cacheAllAssets() {
       if (asset.type === 'image') {
         imageCache[asset.url] = cached;
       }
-      console.log('Loaded cached asset from localStorage:', asset.url);
+      debugLog('Loaded cached asset from localStorage:', asset.url);
       continue;
     }
     
@@ -68,22 +68,22 @@ async function cacheAllAssets() {
             const dataURL = canvas.toDataURL('image/jpeg', 0.8);
             imageCache[asset.url] = dataURL;
             localStorage.setItem(cachedKey, dataURL);
-            console.log('Cached image to localStorage:', asset.url);
+            debugLog('Cached image to localStorage:', asset.url);
           } catch (error) {
-            console.error('Failed to cache image:', asset.url, error);
+            debugLog('ERROR: Failed to cache image:', asset.url, error);
           }
         };
-        img.onerror = () => console.error('Failed to load image:', asset.url);
+        img.onerror = () => debugLog('ERROR: Failed to load image:', asset.url);
         img.src = asset.url;
       } else {
         // Handle text assets (CSS, JS)
         const response = await fetch(asset.url);
         const text = await response.text();
         localStorage.setItem(cachedKey, text);
-        console.log('Cached text asset to localStorage:', asset.url);
+        debugLog('Cached text asset to localStorage:', asset.url);
       }
     } catch (error) {
-      console.error('Failed to cache asset:', asset.url, error);
+      debugLog('ERROR: Failed to cache asset:', asset.url, error);
     }
   }
 }
@@ -267,7 +267,7 @@ function loadBG() {
     const cachedLowRes = localStorage.getItem('cached_https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg');
     if (cachedLowRes && skyElement) {
       skyElement.setAttribute('src', cachedLowRes);
-      console.log('Using cached low-res image for initial load');
+      debugLog('Using cached low-res image for initial load');
     }
   }, 100);
   
@@ -388,13 +388,13 @@ function rotateBG(evt) {
   navigator.geolocation.getCurrentPosition(function(position) {
     const lat = position.coords.latitude;
     const lon = position.coords.longitude;
-    console.log(`Latitude: ${lat}, Longitude: ${lon}`);
+    debugLog(`Latitude: ${lat}, Longitude: ${lon}`);
     let sunLoc = SunCalc.getPosition(new Date(), lat, lon);
-    console.log("sun alt: " + toDegrees(sunLoc.altitude));
-    console.log("sun az: " + toDegrees(sunLoc.azimuth + Math.PI));
+    debugLog("sun alt: " + toDegrees(sunLoc.altitude));
+    debugLog("sun az: " + toDegrees(sunLoc.azimuth + Math.PI));
     let moonLoc = SunCalc.getMoonPosition(new Date(), lat, lon);
-    console.log("moon alt: " + toDegrees(moonLoc.altitude));
-    console.log("moon az: " + toDegrees(moonLoc.azimuth + Math.PI));
+    debugLog("moon alt: " + toDegrees(moonLoc.altitude));
+    debugLog("moon az: " + toDegrees(moonLoc.azimuth + Math.PI));
     
     const portrait = window.matchMedia("(orientation: portrait)").matches;
     var compassCorrection = (portrait) ? heading - 90 : heading;
@@ -417,7 +417,7 @@ function rotateBG(evt) {
     document.getElementById("moon-container").object3D.rotateY(toRadians(compassCorrection));
     document.getElementById("compass-container").object3D.rotateY(toRadians(compassCorrection));
     // sunLoc uses 0 deg for south to add 180 deg (PI radians) to adjust to north
-    console.log("rotate:"+(sunLoc.azimuth + Math.PI))
+    debugLog("rotate:"+(sunLoc.azimuth + Math.PI))
     document.getElementById("sun-container").object3D.rotateY(-sunLoc.azimuth + Math.PI / 2);
     document.getElementById("sun-container").object3D.rotateX(-sunLoc.altitude);
     document.getElementById("moon-container").object3D.rotateY(-moonLoc.azimuth + Math.PI / 2);
@@ -441,9 +441,9 @@ function current_milky_way_position(lat, lon, utc_datetime = null) {
   // Right ascension: 17h 45m 40.0409s
   // Declination: −29° 0′ 28.118″
   sagA_pos = calculate_star_location(lat, lon, 17.7611, -28.992, utc_datetime);
-  console.log(`sagA pos: az: ${sagA_pos[1]}, alt: ${sagA_pos[0]}`);
+  debugLog(`sagA* pos: az: ${sagA_pos[1]}, alt: ${sagA_pos[0]}`);
   com31_pos = calculate_star_location(lat, lon, 12.81, 27.4, utc_datetime);
-  console.log(`com31 pos: az: ${com31_pos[1]}, alt: ${com31_pos[0]}`);
+  debugLog(`com31 pos: az: ${com31_pos[1]}, alt: ${com31_pos[0]}`);
 
   if (sagA_pos[0] < 0) {
     galactic_north_pole_az = sagA_pos[1];
@@ -453,12 +453,12 @@ function current_milky_way_position(lat, lon, utc_datetime = null) {
     galactic_north_pole_alt = 90 - sagA_pos[0];
   }
 
-  console.log(`gal_np pos: az: ${galactic_north_pole_az}, alt: ${galactic_north_pole_alt}`);
+  debugLog(`gal_np pos: az: ${galactic_north_pole_az}, alt: ${galactic_north_pole_alt}`);
   angle = angle_between_points(galactic_north_pole_az, galactic_north_pole_alt, com31_pos[1], com31_pos[0]);
-  console.log(`angle to rotate: ${angle}`);
-  console.log(`ROTATE Y: ${sagA_pos[1]}`);
-  console.log(`ROTATE Z: ${sagA_pos[0]}`);
-  console.log(`ROTATE X: ${angle}`);
+  debugLog(`angle to rotate: ${angle}`);
+  debugLog(`ROTATE Y: ${sagA_pos[1]}`);
+  debugLog(`ROTATE Z: ${sagA_pos[0]}`);
+  debugLog(`ROTATE X: ${angle}`);
   return [sagA_pos[1], sagA_pos[0], angle];
 }
 
@@ -471,11 +471,11 @@ function calculate_star_location(obs_lat_deg, obs_lon_deg, star_ra_hrs, star_dec
   obs_lat_rad = toRadians(obs_lat_deg);
   obs_lon_rad = toRadians(obs_lon_deg);
   d = days_since_j2000(utc_datetime);
-  console.log(d);
+  debugLog(d + ' days since j2000');
   ut = utc_datetime.getUTCHours() + utc_datetime.getUTCMinutes() / 60;
-  console.log(ut);
+  debugLog('UTC: ' + ut);
   lst_deg = local_sidereal_time(d, obs_lon_deg, ut);
-  console.log(lst_deg)
+  debugLog('Local Sidereal Time' + lst_deg)
   star_ra_deg = star_ra_hrs * 15;
   star_dec_rad = toRadians(star_dec_deg);
   ha_rad = toRadians(hour_angle(lst_deg, star_ra_deg));
