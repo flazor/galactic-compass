@@ -18,8 +18,8 @@ const CACHE_FILES = [
   './',
   './main.css',
   './script.js', 
-  './suncalc.js',
-  './aframe.min.js'
+  './lib/suncalc.js',
+  './lib/aframe.min.js'
 ];
 
 // Install event - cache local resources

@@ -10,8 +10,8 @@ export class AssetManager {
   getAssetList() {
     return [
       { url: 'main.css', type: 'text' },
-      { url: 'aframe.min.js', type: 'text' },
-      { url: 'suncalc.js', type: 'text' },
+      { url: 'lib/aframe.min.js', type: 'text' },
+      { url: 'lib/suncalc.js', type: 'text' },
       { url: 'script.js', type: 'text' },
       { url: 'https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg', type: 'image' }
       // Don't preload hi-res image
