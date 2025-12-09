@@ -1,63 +1,94 @@
 /**
- * Simple Service Worker for basic offline functionality
- * Only caches local app files for offline use
+ * Service Worker for Tilt Meter offline functionality
+ * Caches local app files only - images handled by AssetManager
  */
 
-const CACHE_NAME = 'galactic-compass-v5';
+const CACHE_NAME = 'tilt-meter-v1.0';
 
-// Install event - cache local resources only
+// Helper to send messages to main app for debug logging
+function notifyClient(message) {
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: 'SW_LOG', message });
+    });
+  });
+}
+const CACHE_FILES = [
+  './',
+  './main.css',
+  './script.js', 
+  './suncalc.js',
+  './aframe.min.js'
+];
+
+// Install event - cache local resources
 self.addEventListener('install', (event) => {
+  notifyClient(`Installing ${CACHE_NAME}`);
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        return cache.addAll([
-          './',
-          './main.css',
-          './script.js',
-          './suncalc.js',
-          './aframe.min.js',
-          './img/starmap_2020_1k_gal.jpg',
-          './img/starmap_2020_8k_gal.jpg'
-        ]);
+        notifyClient(`Caching ${CACHE_FILES.length} files`);
+        return cache.addAll(CACHE_FILES);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        notifyClient(`${CACHE_NAME} installed successfully`);
+        self.skipWaiting();
+      })
+      .catch((error) => {
+        notifyClient(`Install failed: ${error.message}`);
+      })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  notifyClient(`Activating ${CACHE_NAME}`);
+  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+      const deletePromises = cacheNames
+        .filter(cacheName => cacheName !== CACHE_NAME)
+        .map(cacheName => {
+          notifyClient(`Deleting old cache: ${cacheName}`);
+          return caches.delete(cacheName);
+        });
+      
+      return Promise.all(deletePromises);
+    })
+    .then(() => {
+      notifyClient(`${CACHE_NAME} activated successfully`);
+      return self.clients.claim();
+    })
+    .catch((error) => {
+      notifyClient(`Activation failed: ${error.message}`);
+    })
   );
 });
 
-// Fetch event - network first, cache fallback for local files only
+// Fetch event - network first with cache fallback
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  // Only handle GET requests for same-origin files
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
   
-  // Only intercept same-origin requests (local app files)
-  if (event.request.url.startsWith(self.location.origin)) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Update cache with fresh version
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Update cache with fresh version if successful
+        if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, responseClone));
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache when offline
-          return caches.match(event.request);
-        })
-    );
-  }
+            .then((cache) => cache.put(event.request, responseClone))
+            .catch((error) => console.warn(`[SW] Cache update failed:`, error));
+        }
+        return response;
+      })
+      .catch(() => {
+        // Fallback to cache when network fails
+        notifyClient(`Using cache fallback for: ${event.request.url.split('/').pop()}`);
+        return caches.match(event.request);
+      })
+  );
 });

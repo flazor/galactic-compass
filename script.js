@@ -16,6 +16,13 @@ const uiControls = new UIControls();
 const celestialRenderer = new CelestialRenderer(sceneManager, uiControls);
 const assetManager = new AssetManager(uiControls);
 
+// Listen for service worker messages
+navigator.serviceWorker?.addEventListener('message', (event) => {
+  if (event.data?.type === 'SW_LOG') {
+    uiControls.debugLog(`[SW] ${event.data.message}`);
+  }
+});
+
 // Make functions available globally for HTML onload and A-Frame components
 window.loadBG = loadBG;
 window.toRadians = Coordinates.toRadians;
@@ -71,7 +78,7 @@ function checkDeviceCapabilities() {
 
 function loadBG() {
   // Version info for debugging
-  uiControls.debugLog(`Galactic Compass v${VERSION}`);
+  uiControls.debugLog(`Tilt Meter v${VERSION} | SW: tilt-meter-v1.0`);
   
   // Initialize rendering system
   try {
