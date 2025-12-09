@@ -64,19 +64,37 @@ export class CelestialRenderer {
     const skybox = this.sceneManager.getSkybox();
     if (!skybox) return;
 
+    let timeoutTriggered = false;
+    let checkCount = 0;
+
     const checkTexture = () => {
+      if (timeoutTriggered) return;
+      
+      checkCount++;
       const material = skybox.getObject3D('mesh')?.material;
-      if (material && material.map && material.map.image && 
-          (material.map.image.src.includes('8k') || material.map.image.src.startsWith('data:'))) {
-        // Texture is actually updated with hi-res content
-        setTimeout(() => {
-          callback(true);
-          this.uiControls?.debugLog('Hi-res texture rendered successfully');
-        }, 500); // Small delay to ensure GPU has processed the texture
+      
+      if (material && material.map && material.map.image) {
+        const src = material.map.image.src;
+        const isHiRes = src.includes('8k') || 
+                       (src.startsWith('data:') && src.length > 100000); // Large data URL indicates hi-res
+        
+        this.uiControls?.debugLog(`Texture check ${checkCount}: ${src.substring(0, 50)}... isHiRes: ${isHiRes}`);
+        
+        if (isHiRes) {
+          // Texture is actually updated with hi-res content
+          timeoutTriggered = true;
+          setTimeout(() => {
+            callback(true);
+            this.uiControls?.debugLog('Hi-res texture rendered successfully');
+          }, 500); // Small delay to ensure GPU has processed the texture
+          return;
+        }
       } else {
-        // Check again in a short while
-        setTimeout(checkTexture, 100);
+        this.uiControls?.debugLog(`Texture check ${checkCount}: No material/map/image yet`);
       }
+      
+      // Check again in a short while
+      setTimeout(checkTexture, 100);
     };
 
     // Start checking for texture update
@@ -84,8 +102,11 @@ export class CelestialRenderer {
 
     // Fallback timeout
     setTimeout(() => {
-      callback(false);
-      this.uiControls?.debugLog('Hi-res texture load timeout');
+      if (!timeoutTriggered) {
+        timeoutTriggered = true;
+        callback(false);
+        this.uiControls?.debugLog(`Hi-res texture load timeout after ${checkCount} checks`);
+      }
     }, timeout);
   }
 }

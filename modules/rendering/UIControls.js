@@ -21,14 +21,20 @@ export class UIControls {
       });
     }
 
-    // Hi-res button will be handled externally (needs access to image caching)
-    // but we can manage its state here
-
     // Set up debug div click handler
     if (this.debugDiv) {
       this.debugDiv.addEventListener('click', () => {
         this.toggleDebugExpansion();
       });
+    }
+
+    return true;
+  }
+
+  setupHiResButton(callback) {
+    // Set up hi-res button event listener with provided callback
+    if (this.hiResBtn && callback) {
+      this.hiResBtn.addEventListener('click', callback);
     }
 
     return true;

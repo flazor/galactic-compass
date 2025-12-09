@@ -25,14 +25,7 @@ window.loadHighResImage = loadHighResImage;
 AFRAME.registerComponent('button', {
   init() {
     uiControls.initialize();
-    
-    // Set up hi-res button event listener
-    const hiResBtn = document.getElementById('hiResButton');
-    if (hiResBtn) {
-      hiResBtn.addEventListener('click', () => {
-        loadHighResImage();
-      });
-    }
+    uiControls.setupHiResButton(loadHighResImage);
   }
 });
 
