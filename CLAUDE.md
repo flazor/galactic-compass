@@ -4,19 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Galactic Compass is a WebVR/AR application that displays a 3D celestial compass showing the position of the Milky Way galaxy, sun, moon, and cardinal directions relative to the user's location and device orientation. It uses A-Frame for 3D rendering and device sensors for real-time positioning.
+Tilt Meter is a WebVR/AR application that visualizes how we're flying through space at multiple scales. Built on a modular architecture, it shows Earth's motion vectors (rotation, orbital motion, galactic motion) while maintaining accurate celestial reference points. Uses A-Frame for 3D rendering and device sensors for real-time positioning.
 
-## Architecture
+## Modular Architecture
 
-### Core Components
+### Core Modules
 
-- **index.html**: Main application entry point using A-Frame VR framework
-- **script.js**: Main application logic containing:
-  - Device orientation handling and compass calibration
-  - Astronomical calculations for celestial body positioning
-  - Milky Way galactic center positioning algorithms
-  - Real-time coordinate transformations
-- **suncalc.js**: Third-party library for sun/moon position calculations
+- **modules/sensors/DeviceOrientation.js**: Device compass and orientation handling with proper event cleanup
+- **modules/sensors/Geolocation.js**: GPS positioning with error handling
+- **modules/astronomy/Coordinates.js**: Mathematical utilities and coordinate transformations
+- **modules/astronomy/StellarCalculations.js**: Star positioning calculations using astronomical algorithms
+- **modules/astronomy/GalacticCenter.js**: Milky Way galactic center positioning (Sagittarius A*)
+
+### Main Application
+
+- **index.html**: A-Frame VR scene with celestial objects and containers
+- **script.js**: Main application orchestrating modules with ES6 imports
+- **suncalc.js**: Third-party library for sun/moon position calculations  
 - **main.css**: Minimal styling for UI elements
 
 ### Key Features
@@ -38,39 +42,9 @@ The application includes several astronomical calculation functions:
 - `local_sidereal_time()`: Sidereal time calculations
 - Coordinate transformation utilities (radians/degrees)
 
-## Development
-
-### Running the Application
-
-This is a client-side web application. Serve the files using any HTTP server:
-```bash
-# Using Python 3
-python -m http.server 8000
-
-# Using Node.js http-server
-npx http-server
-
-# Using PHP
-php -S localhost:8000
-```
-
-### Testing
-
-The application requires:
-- HTTPS connection (for device orientation API)
-- Mobile device with compass/orientation sensors
-- GPS/location services enabled
-- WebVR-compatible browser
-
-### File Structure
-
-- Root directory contains the main application
-- `smash/` subdirectory contains a separate HTML file (purpose unclear from analysis)
-- `cache.manifest` enables offline application caching
-
 ### Dependencies
 
-- A-Frame 1.0.0 (loaded from CDN)
+- A-Frame 
 - SunCalc library (vendored in suncalc.js)
 - Native browser APIs: geolocation, deviceorientation
 
@@ -81,16 +55,3 @@ The application requires:
 - Compass heading correction varies between portrait/landscape orientation
 - All astronomical calculations use real-time date and GPS coordinates
 
-## Recent Work (August 2025)
-
-### Service Worker Implementation
-- Added `sw.js` for offline functionality
-- Caches essential assets: main.css, script.js, suncalc.js, and external starmap image
-- Implements cache-first strategy with network fallback
-- Automatically caches same-origin resources and images during usage
-- Ready for PWA conversion if needed in future
-
-### Pending Tasks
-- Test offline functionality on mobile device
-- Consider adding manifest.json for full PWA support
-- Verify all external dependencies are properly cached

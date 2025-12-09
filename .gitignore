@@ -1,3 +1,47 @@
-.httpd_conf
-cert.pem
-key.pem
+# Large image files - downloaded/cached by app
+**/*8k*.jpg
+**/*_8k_*.jpg
+
+# Cache and temporary files
+*.appcache
+cache.manifest
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# Build outputs (if we add build tools later)
+dist/
+build/

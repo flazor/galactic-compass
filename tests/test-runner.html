@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tilt Meter Tests</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test-result { margin: 5px 0; padding: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .suite { margin: 20px 0; border-left: 3px solid #ccc; padding-left: 15px; }
+        .suite-title { font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Tilt Meter Test Results</h1>
+    <div id="test-output"></div>
+    
+    <script type="module">
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.results = [];
+                this.currentSuite = null;
+            }
+
+            suite(name, fn) {
+                this.currentSuite = name;
+                console.log(`\n=== ${name} ===`);
+                fn();
+                this.currentSuite = null;
+            }
+
+            test(description, fn) {
+                try {
+                    fn();
+                    this.pass(description);
+                } catch (error) {
+                    this.fail(description, error.message);
+                }
+            }
+
+            assertEquals(actual, expected, message = '') {
+                if (actual !== expected) {
+                    throw new Error(`${message}\nExpected: ${expected}\nActual: ${actual}`);
+                }
+            }
+
+            assertClose(actual, expected, tolerance = 0.001, message = '') {
+                const diff = Math.abs(actual - expected);
+                if (diff > tolerance) {
+                    throw new Error(`${message}\nExpected: ${expected} ± ${tolerance}\nActual: ${actual} (diff: ${diff})`);
+                }
+            }
+
+            pass(description) {
+                const result = { suite: this.currentSuite, test: description, status: 'pass' };
+                this.results.push(result);
+                console.log(`✓ ${description}`);
+            }
+
+            fail(description, error) {
+                const result = { suite: this.currentSuite, test: description, status: 'fail', error };
+                this.results.push(result);
+                console.log(`✗ ${description}: ${error}`);
+            }
+
+            render() {
+                const output = document.getElementById('test-output');
+                let html = '';
+                let currentSuite = null;
+
+                this.results.forEach(result => {
+                    if (result.suite !== currentSuite) {
+                        if (currentSuite !== null) html += '</div>';
+                        html += `<div class="suite"><div class="suite-title">${result.suite}</div>`;
+                        currentSuite = result.suite;
+                    }
+
+                    const cssClass = result.status === 'pass' ? 'pass' : 'fail';
+                    const icon = result.status === 'pass' ? '✓' : '✗';
+                    const error = result.error ? `: ${result.error}` : '';
+                    html += `<div class="test-result ${cssClass}">${icon} ${result.test}${error}</div>`;
+                });
+
+                if (currentSuite !== null) html += '</div>';
+
+                const passCount = this.results.filter(r => r.status === 'pass').length;
+                const failCount = this.results.filter(r => r.status === 'fail').length;
+                html += `<div style="margin-top: 20px; font-weight: bold;">
+                    Results: ${passCount} passed, ${failCount} failed
+                </div>`;
+
+                output.innerHTML = html;
+            }
+        }
+
+        // Initialize test runner and make it globally available
+        const testRunner = new TestRunner();
+        window.testRunner = {
+            suite: testRunner.suite.bind(testRunner),
+            test: testRunner.test.bind(testRunner),
+            assertEquals: testRunner.assertEquals.bind(testRunner),
+            assertClose: testRunner.assertClose.bind(testRunner),
+            pass: testRunner.pass.bind(testRunner),
+            fail: testRunner.fail.bind(testRunner),
+            render: testRunner.render.bind(testRunner)
+        };
+        
+        // Wait for test runner to be available, then import tests
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await import('./coordinates.test.js');
+                await import('./stellar-calculations.test.js');
+                
+                // Render results after all tests complete
+                setTimeout(() => {
+                    testRunner.render();
+                }, 100);
+            } catch (error) {
+                console.error('Error loading tests:', error);
+                document.getElementById('test-output').innerHTML = 
+                    `<div class="fail">Error loading tests: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

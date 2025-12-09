@@ -2,8 +2,8 @@
   <head>
     <link rel="stylesheet" href="main.css">
     <script src="aframe.min.js"></script>
-    <script src="script.js" defer></script>
-    <script src="suncalc.js" defer></script>
+    <script src="suncalc.js"></script>
+    <script src="script.js" type="module" defer></script>
   </head>
 
   <body onload="loadBG();">
@@ -26,9 +26,7 @@
       <a-circle id="earth-surface" position="0 0 0" rotation="-90 0 0" radius="900" color="blue" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
 
       <a-entity id="milky-way-container">
-        <a-circle id="galactic-plane" position="0 0 0" rotation="-90 0 0" radius="1000" color="purple" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
         <a-sphere id="black-hole-sphere" color="#DD33DD" position="-490 0 0" radius="3"></a-sphere>
-        <a-sphere id="solar-system-orbit-dir" color="#DD99DD" position="0 0 -490" radius="3"></a-sphere>
       </a-entity>
       <a-entity id="moon-container">
         <a-sphere id="moon-sphere" color="#DDDDDD" position="0 0 490" radius="13"></a-sphere>
@@ -36,7 +34,6 @@
       <a-entity id="sun-container">
         <a-entity position="0 0 245" light="type:directional; castShadow:true;"></a-entity>
         <a-sphere id="sun-sphere" color="#FFFFDD" position="0 0 245" radius="7"></a-sphere>
-        <a-circle id="ecliptic-plane" position="0 0 245" rotation="-90 0 0" radius="490" color="yellow" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
       </a-entity>
       <a-entity id="compass-container">
         <a-text id="east" value="E" color="#FF0000" position="0 20 -490" scale="100 100 100" rotation="0 0 0"></a-text>
