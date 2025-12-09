@@ -3,7 +3,8 @@
  * Caches local app files only - images handled by AssetManager
  */
 
-const CACHE_NAME = 'tilt-meter-v1.0';
+import { VERSION } from './modules/config/version.js';
+const CACHE_NAME = `tilt-meter-v${VERSION}`;
 
 // Helper to send messages to main app for debug logging
 function notifyClient(message) {

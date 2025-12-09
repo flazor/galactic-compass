@@ -5,8 +5,7 @@ import { UIControls } from './modules/rendering/UIControls.js';
 import { CelestialRenderer } from './modules/rendering/CelestialRenderer.js';
 import { AssetManager } from './modules/assets/AssetManager.js';
 import { Coordinates } from './modules/astronomy/Coordinates.js';
-
-const VERSION = '0.1.2';
+import { VERSION } from './modules/config/version.js';
 
 // Global instances
 const deviceOrientation = new DeviceOrientation();
@@ -77,13 +76,13 @@ function checkDeviceCapabilities() {
 }
 
 function loadBG() {
-  // Version info for debugging
-  uiControls.debugLog(`Tilt Meter v${VERSION} | SW: tilt-meter-v1.0`);
-  
   // Initialize rendering system
   try {
     sceneManager.initialize();
     uiControls.initialize();
+    
+    // Version info for debugging (after UI is initialized)
+    uiControls.debugLog(`Tilt Meter v${VERSION}`);
     uiControls.debugLog('Rendering system initialized');
   } catch (error) {
     uiControls.debugLog('ERROR initializing rendering system: ' + error.message);
