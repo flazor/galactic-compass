@@ -1,4 +1,6 @@
 import { Coordinates } from '../astronomy/Coordinates.js';
+import { AndromedaPull } from '../motion/AndromedaPull.js';
+import { EarthRotationHUD } from '../motion/EarthRotationHUD.js';
 
 export class SceneManager {
   constructor() {
@@ -18,6 +20,11 @@ export class SceneManager {
     
     // Cache container references
     this.containers = {
+      earthRotation: document.getElementById('earth-rotation-container'),
+      earthOrbit: document.getElementById('earth-orbit-container'),
+      solarOrbit: document.getElementById('solar-orbit-container'),
+      andromedaPull: document.getElementById('andromeda-pull-container'),
+      greatAttractor: document.getElementById('great-attractor-container'),
       milkyWay: document.getElementById('milky-way-container'),
       sun: document.getElementById('sun-container'),
       moon: document.getElementById('moon-container'),
@@ -62,9 +69,17 @@ export class SceneManager {
     const container = this.containers[containerName];
     if (!container) return;
 
-    // SunCalc uses 0 deg for south, add PI to adjust to north
-    container.object3D.rotateY(-azimuth + Math.PI / 2);
-    container.object3D.rotateX(-altitude);
+    container.object3D.rotateY(-azimuth);
+    container.object3D.rotateZ(-altitude);
+  }
+
+  directVectorPlacement(az, alt, distance) {
+    const pos = new THREE.Vector3(
+      Math.cos(alt) * Math.sin(az),
+      Math.sin(alt),
+      Math.cos(alt) * Math.cos(az)
+    ).multiplyScalar(distance);
+    return pos;
   }
 
   positionGalacticCenter(galacticRotations) {

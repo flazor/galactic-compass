@@ -1,5 +1,10 @@
 import { GalacticCenter } from '../astronomy/GalacticCenter.js';
 import { Coordinates } from '../astronomy/Coordinates.js';
+import { EarthOrbit } from '../motion/EarthOrbit.js';
+import { SolarOrbit } from '../motion/SolarOrbit.js';
+import { GreatAttractor } from '../motion/GreatAttractor.js';
+import { EarthRotation } from '../motion/EarthRotation.js';
+import { AndromedaPull } from '../motion/AndromedaPull.js';
 
 export class CelestialRenderer {
   constructor(sceneManager, uiControls) {
@@ -20,10 +25,10 @@ export class CelestialRenderer {
       const galacticRotations = GalacticCenter.currentMilkyWayPosition(lat, lon, date);
 
       // Log calculations
-      this.uiControls?.debugLog("sun alt: " + Coordinates.toDegrees(sunLoc.altitude));
       this.uiControls?.debugLog("sun az: " + Coordinates.toDegrees(sunLoc.azimuth + Math.PI));
-      this.uiControls?.debugLog("moon alt: " + Coordinates.toDegrees(moonLoc.altitude));
+      this.uiControls?.debugLog("sun alt: " + Coordinates.toDegrees(sunLoc.altitude));
       this.uiControls?.debugLog("moon az: " + Coordinates.toDegrees(moonLoc.azimuth + Math.PI));
+      this.uiControls?.debugLog("moon alt: " + Coordinates.toDegrees(moonLoc.altitude));
 
       // Apply skybox rotations
       this.sceneManager.applySkyboxRotation(compassCorrection, galacticRotations);
@@ -32,8 +37,39 @@ export class CelestialRenderer {
       this.sceneManager.applyCompassCorrection(compassCorrection);
 
       // Position celestial bodies
-      this.sceneManager.positionCelestialBody('sun', sunLoc.azimuth, sunLoc.altitude);
-      this.sceneManager.positionCelestialBody('moon', moonLoc.azimuth, moonLoc.altitude);
+      // SunCalc uses 0 deg for south, add PI to adjust to north
+      this.sceneManager.positionCelestialBody('sun', sunLoc.azimuth + Math.PI, sunLoc.altitude);
+      this.sceneManager.positionCelestialBody('moon', moonLoc.azimuth + Math.PI, moonLoc.altitude);
+
+      // Earth rotation is to the East
+      var er = new EarthRotation()
+      this.sceneManager.positionCelestialBody('earthRotation', Math.PI/2, 0);
+      document.getElementById('earth-rotation-hud-text').setAttribute('value', Math.round(er.getRotationalVelocity(lat) * 100) / 100 + " km/s");
+
+      var eo = new EarthOrbit();
+      var eoDir = eo.getDirection(lat, lon, date);
+      this.uiControls?.debugLog("EO az: " + Coordinates.toDegrees(eoDir.azimuth) + " EO alt: " + Coordinates.toDegrees(eoDir.altitude));
+      this.sceneManager.positionCelestialBody('earthOrbit', eoDir.azimuth, eoDir.altitude);
+      document.getElementById('earth-orbit-hud-text').setAttribute('value', eo.getOrbitalVelocity() + " km/s");
+
+      var so = new SolarOrbit();
+      var soDir = so.getDirection(lat, lon, date);
+      this.uiControls?.debugLog("SO az: " + Coordinates.toDegrees(soDir.azimuth) + " SO alt: " + Coordinates.toDegrees(soDir.altitude));
+      this.sceneManager.positionCelestialBody('solarOrbit', soDir.azimuth, soDir.altitude);
+      document.getElementById('solar-orbit-hud-text').setAttribute('value', so.getOrbitalVelocity() + " km/s");
+
+      var ap = new AndromedaPull();
+      var apDir = ap.getDirection(lat, lon, date);
+      this.uiControls?.debugLog("AP az: " + Coordinates.toDegrees(apDir.azimuth) + " AP alt: " + Coordinates.toDegrees(apDir.altitude));
+      this.sceneManager.positionCelestialBody('andromedaPull', apDir.azimuth, apDir.altitude);
+      document.getElementById('andromeda-pull-hud-text').setAttribute('value', ap.getVelocity() + " km/s");
+
+      var ga = new GreatAttractor();
+      var gaDir = ga.getDirection(lat, lon, date);
+      this.uiControls?.debugLog("GA az: " + Coordinates.toDegrees(gaDir.azimuth) + " GA alt: " + Coordinates.toDegrees(gaDir.altitude));
+      this.sceneManager.positionCelestialBody('greatAttractor', gaDir.azimuth, gaDir.altitude);
+      document.getElementById('great-attractor-hud-text').setAttribute('value', ga.getVelocity() + " km/s");
+
 
       // Position galactic center
       this.sceneManager.positionGalacticCenter(galacticRotations);

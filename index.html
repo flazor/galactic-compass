@@ -21,27 +21,56 @@
     </div>
     <a-scene vr-mode-ui="enabled: false" button>
       <a-entity light="type: ambient; color: #BBB"></a-entity>
-      <a-camera look-controls="touchEnabled: false"></a-camera>
+      <a-camera id="camera" look-controls="touchEnabled: false" position="0 0 0"></a-camera>
       <a-sky id="a-sky" src="https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg"></a-sky>
-      <a-circle id="earth-surface" position="0 0 0" rotation="-90 0 0" radius="900" color="blue" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
+      <a-circle id="earth-surface" position="0 -0.1 0" rotation="-90 0 0" radius="900" color="blue" material="transparent: true; opacity: 0.1; side: double; depthWrite: false;"></a-circle>
 
       <a-entity id="milky-way-container">
         <a-sphere id="black-hole-sphere" color="#DD33DD" position="-490 0 0" radius="3"></a-sphere>
       </a-entity>
       <a-entity id="moon-container">
-        <a-sphere id="moon-sphere" color="#DDDDDD" position="0 0 490" radius="13"></a-sphere>
+        <a-sphere id="moon-sphere" color="#DDDDDD" position="-490 0 0" radius="13"></a-sphere>
       </a-entity>
       <a-entity id="sun-container">
-        <a-entity position="0 0 245" light="type:directional; castShadow:true;"></a-entity>
-        <a-sphere id="sun-sphere" color="#FFFFDD" position="0 0 245" radius="7"></a-sphere>
+        <a-entity position="-245 0 0" light="type:directional; castShadow:true;"></a-entity>
+        <a-sphere id="sun-sphere" color="#FFFFDD" position="-245 0 0" radius="7"></a-sphere>
       </a-entity>
       <a-entity id="compass-container">
-        <a-text id="east" value="E" color="#FF0000" position="0 20 -490" scale="100 100 100" rotation="0 0 0"></a-text>
-        <a-text id="west" value="W" color="#FF0000" position="0 20 490" scale="100 100 100" rotation="0 180 0"></a-text>
-        <a-text id="south" value="S" color="#FF0000" position="490 20 0" scale="100 100 100" rotation="0 -90 0"></a-text>
-        <a-text id="north" value="N" color="#FF0000" position="-490 20 0" scale="100 100 100" rotation="0 90 0"></a-text>
+        <a-text id="east" value="E" color="#FF0000" position="0 0 -490" scale="100 100 100" rotation="0 0 0"></a-text>
+        <a-text id="west" value="W" color="#FF0000" position="0 0 490" scale="100 100 100" rotation="0 180 0"></a-text>
+        <a-text id="south" value="S" color="#FF0000" position="490 0 0" scale="100 100 100" rotation="0 -90 0"></a-text>
+        <a-text id="north" value="N" color="#FF0000" position="-490 0 0" scale="100 100 100" rotation="0 90 0"></a-text>
       </a-entity>
+      
+      <a-entity id="earth-rotation-container" look-at="[camera]">
+        <a-sphere id="earth-rotation-direction-sphere" position="-2 0 0" color="#00FF00" radius="0.01"></a-sphere>
+        <a-circle id="earth-rotation-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#00FF00" radius="0.5" material="transparent: true; opacity: 0.2; side: double;"></a-circle>
+        <a-text id="earth-rotation-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#00FF00"></a-text>
+      </a-entity>
+      <a-entity id="earth-orbit-container" look-at="[camera]">
+        <a-sphere id="earth-orbit-direction-sphere" position="-2 0 0" color="#0000FF" radius="0.01"></a-sphere>
+        <a-circle id="earth-orbit-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#0000FF" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="earth-orbit-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#0000FF"></a-text>
+      </a-entity>
+      <a-entity id="solar-orbit-container" look-at="[camera]">
+        <a-sphere id="solar-orbit-direction-sphere" position="-2 0 0" color="#FFFF00" radius="0.01"></a-sphere>
+        <a-circle id="solar-orbit-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#FFFF00" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="solar-orbit-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#FFFF00"></a-text>
+      </a-entity>
+      <a-entity id="andromeda-pull-container" look-at="[camera]">
+        <a-sphere id="andromeda-pull-direction-sphere" position="-2 0 0" color="#FF0000" radius="0.01"></a-sphere>
+        <a-circle id="andromeda-pull-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#FF0000" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="andromeda-pull-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#FF0000"></a-text>
+      </a-entity>
+      <a-entity id="great-attractor-container" look-at="[camera]">
+        <a-sphere id="great-attractor-sphere" position="-2 0 0" color="#FF00FF" radius="0.01"></a-sphere>
+        <a-circle id="great-attractor-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#FF00FF" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="great-attractor-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#FF00FF"></a-text>
+      </a-entity>
+
     </a-scene>
+
+
 <script>
 // Register Service Worker for offline functionality
 if ('serviceWorker' in navigator) {

@@ -11,10 +11,7 @@ export class StellarCalculations {
     const d = Coordinates.daysSinceJ2000(utcDatetime);
     console.log(d + ' days since j2000');
     
-    const ut = utcDatetime.getUTCHours() + utcDatetime.getUTCMinutes() / 60;
-    console.log('UTC: ' + ut);
-    
-    const lstDeg = Coordinates.localSiderealTime(d, obsLonDeg, ut);
+    const lstDeg = Coordinates.localSiderealTime(d, obsLonDeg);
     console.log('Local Sidereal Time: ' + lstDeg);
     
     const starRaDeg = starRaHrs * 15;

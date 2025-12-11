@@ -16,11 +16,15 @@ export class Coordinates {
     return diff / (24 * 60 * 60 * 1000);
   }
 
-  static localSiderealTime(daysSinceJ2000, lonDeg, hours) {
-    let lst = 100.46 + 0.985647 * daysSinceJ2000 + lonDeg + 15 * hours;
-    return lst % 360;
-  }
 
+  static localSiderealTime(daysSinceJ2000, lonDeg) {
+    const lst = 280.46061837
+              + 360.98564736629 * daysSinceJ2000
+              + lonDeg;
+    return ((lst % 360) + 360) % 360;
+  }
+  
+  
   static hourAngle(lstDeg, raDeg) {
     let ha = lstDeg - raDeg;
     if (ha < 0) {
@@ -53,5 +57,68 @@ export class Coordinates {
     const angle = 2 * Math.asin(Math.sqrt(haversineAlt + Math.cos(alt1Rad) * Math.cos(alt2Rad) * haversineAz));
     
     return Coordinates.toDegrees(angle);
+  }
+
+  /**
+   * Convert ecliptic coordinates to equatorial coordinates
+   * @param {number} lambda - Ecliptic longitude (rad)
+   * @param {number} beta   - Ecliptic latitude (rad)
+   * @param {number} eps    - Obliquity of the ecliptic (rad)
+   * @returns {Object} { ra, dec } in radians
+   */
+  static eclipticToEquatorial(lambda, beta, eps) {
+
+    const sinLambda = Math.sin(lambda);
+    const cosLambda = Math.cos(lambda);
+    const sinBeta   = Math.sin(beta);
+    const cosBeta   = Math.cos(beta);
+    const sinEps    = Math.sin(eps);
+    const cosEps    = Math.cos(eps);
+
+    // Right ascension
+    let ra = Math.atan2(
+      sinLambda * cosEps - Math.tan(beta) * sinEps,
+      cosLambda
+    );
+
+    // Normalize RA to [0, 2π)
+    if (ra < 0) ra += 2 * Math.PI;
+
+    // Declination
+    const dec = Math.asin(
+      sinBeta * cosEps + cosBeta * sinEps * sinLambda
+    );
+
+    return { ra, dec };
+  }
+  /**
+   * Convert equatorial coordinates to horizontal coordinates
+   * @param {number} ha   - Hour angle (rad)
+   * @param {number} dec  - Declination (rad)
+   * @param {number} lat  - Observer latitude (rad)
+   * @returns {Object} { azimuth, altitude } in radians
+   *
+   * Azimuth convention:
+   *   0 = North, π/2 = East, π = South, 3π/2 = West
+   */
+  static equatorialToHorizontal(ha, dec, lat) {
+
+    // Altitude
+    const sinAlt =
+      Math.sin(lat) * Math.sin(dec) +
+      Math.cos(lat) * Math.cos(dec) * Math.cos(ha);
+
+    const altitude = Math.asin(sinAlt);
+
+    // Azimuth (north = 0, east = +)
+    const y = Math.sin(ha);
+    const x =
+      Math.cos(ha) * Math.sin(lat) -
+      Math.tan(dec) * Math.cos(lat);
+
+    let azimuth = Math.atan2(y, x);
+    if (azimuth < 0) azimuth += 2 * Math.PI;
+
+    return { azimuth, altitude };
   }
 }

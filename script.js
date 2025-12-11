@@ -112,10 +112,10 @@ async function handleDeviceReady(heading) {
   try {
     const position = await geolocation.getCurrentPosition();
     const compassCorrection = deviceOrientation.getOrientationCorrection(heading);
+    uiControls.debugLog('Using compass correction: ' + compassCorrection);
     
     // Render the celestial scene using the new rendering system
     celestialRenderer.renderCelestialScene(position, compassCorrection);
-    
   } catch (error) {
     uiControls.debugLog('ERROR in handleDeviceReady: ' + error.message);
   }
