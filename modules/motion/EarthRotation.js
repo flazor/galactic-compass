@@ -7,9 +7,10 @@ export class EarthRotation {
   /**
    * Calculate rotational velocity at given latitude
    * @param {number} latitude - Observer's latitude in degrees
+   * @param {number} longitude - Observer's longitude in degrees (not used for rotation)
    * @returns {number} Velocity in km/s
    */
-  getVelocity(latitude) {
+  getVelocity(latitude, longitude) {
     // Convert latitude to radians
     const latRad = latitude * Math.PI / 180;
     
@@ -18,14 +19,17 @@ export class EarthRotation {
     // At poles (lat=±90): zero speed
     const velocity = this.equatorialSpeed * Math.cos(latRad);
     
-    return velocity;
+    return Math.round(velocity * 100) / 100;
   }
 
   /**
    * Get direction of rotation (always eastward)
+   * @param {number} latitude - Observer's latitude in degrees (not used for rotation direction)
+   * @param {number} longitude - Observer's longitude in degrees (not used for rotation direction)  
+   * @param {Date} date - Current date (not used for rotation direction)
    * @returns {Object} Direction info
    */
-  getDirection() {
+  getDirection(latitude, longitude, date) {
     return {
       azimuth: Math.PI / 2, // 90 degrees = East
       altitude: 0, // Horizontal
