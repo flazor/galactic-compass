@@ -6,13 +6,15 @@ import { CelestialRenderer } from './modules/rendering/CelestialRenderer.js';
 import { AssetManager } from './modules/assets/AssetManager.js';
 import { Coordinates } from './modules/astronomy/Coordinates.js';
 import { VERSION } from './modules/config/version.js';
+import { LevelManager } from './modules/config/LevelManager.js';
 
 // Global instances
 const deviceOrientation = new DeviceOrientation();
 const geolocation = new Geolocation();
 const sceneManager = new SceneManager();
 const uiControls = new UIControls();
-const celestialRenderer = new CelestialRenderer(sceneManager, uiControls);
+const levelManager = new LevelManager(uiControls);
+const celestialRenderer = new CelestialRenderer(sceneManager, uiControls, levelManager);
 const assetManager = new AssetManager(uiControls);
 
 // Listen for service worker messages
@@ -28,6 +30,7 @@ window.toRadians = Coordinates.toRadians;
 window.toDegrees = Coordinates.toDegrees;
 window.toggleDebugExpansion = () => uiControls.toggleDebugExpansion();
 window.loadHighResImage = loadHighResImage;
+window.levelManager = levelManager; // For testing and development
 
 // A-Frame component registration
 AFRAME.registerComponent('button', {

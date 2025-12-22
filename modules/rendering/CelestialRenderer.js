@@ -5,11 +5,13 @@ import { SolarOrbit } from '../motion/SolarOrbit.js';
 import { GreatAttractor } from '../motion/GreatAttractor.js';
 import { EarthRotation } from '../motion/EarthRotation.js';
 import { AndromedaPull } from '../motion/AndromedaPull.js';
+import { COSMIC_LEVELS } from '../config/CosmicLevels.js';
 
 export class CelestialRenderer {
-  constructor(sceneManager, uiControls) {
+  constructor(sceneManager, uiControls, levelManager = null) {
     this.sceneManager = sceneManager;
     this.uiControls = uiControls;
+    this.levelManager = levelManager;
   }
 
   logCoordinates(objectOrName, azimuth, altitude) {
@@ -43,6 +45,36 @@ export class CelestialRenderer {
     this.updateHUDText(elementId, `${velocity} km/s`);
   }
 
+  processMotionHUDsBasedOnLevels(lat, lon, date) {
+    // Use level manager to determine which HUDs to show
+    if (!this.levelManager) {
+      // Fallback: process all currently implemented motion HUDs
+      this.processMotionHUD(EarthRotation, 'earthRotation', 'earth-rotation-hud-text', lat, lon, date);
+      this.processMotionHUD(EarthOrbit, 'earthOrbit', 'earth-orbit-hud-text', lat, lon, date);
+      this.processMotionHUD(SolarOrbit, 'solarOrbit', 'solar-orbit-hud-text', lat, lon, date);
+      this.processMotionHUD(AndromedaPull, 'andromedaPull', 'andromeda-pull-hud-text', lat, lon, date);
+      this.processMotionHUD(GreatAttractor, 'greatAttractor', 'great-attractor-hud-text', lat, lon, date);
+      return;
+    }
+
+    // Get active implemented levels from level manager
+    const activeLevels = this.levelManager.getActiveImplementedLevels();
+    
+    this.uiControls?.debugLog(`Processing ${activeLevels.length} active motion HUDs (max level: ${this.levelManager.getMaxLevel()})`);
+
+    // Process each active level
+    activeLevels.forEach(level => {
+      if (level.motionClass && level.implemented) {
+        this.processMotionHUD(
+          level.motionClass, 
+          level.bodyId, 
+          level.elementId, 
+          lat, lon, date
+        );
+      }
+    });
+  }
+
   renderCelestialScene(position, compassCorrection, currentTime = null) {
     if (!this.sceneManager || !position) return;
 
@@ -70,12 +102,8 @@ export class CelestialRenderer {
       this.sceneManager.positionCelestialBody('sun', sunLoc.azimuth + Math.PI, sunLoc.altitude);
       this.sceneManager.positionCelestialBody('moon', moonLoc.azimuth + Math.PI, moonLoc.altitude);
 
-      // Process all motion HUDs with unified method
-      this.processMotionHUD(EarthRotation, 'earthRotation', 'earth-rotation-hud-text', lat, lon, date);
-      this.processMotionHUD(EarthOrbit, 'earthOrbit', 'earth-orbit-hud-text', lat, lon, date);
-      this.processMotionHUD(SolarOrbit, 'solarOrbit', 'solar-orbit-hud-text', lat, lon, date);
-      this.processMotionHUD(AndromedaPull, 'andromedaPull', 'andromeda-pull-hud-text', lat, lon, date);
-      this.processMotionHUD(GreatAttractor, 'greatAttractor', 'great-attractor-hud-text', lat, lon, date);
+      // Process motion HUDs based on level configuration
+      this.processMotionHUDsBasedOnLevels(lat, lon, date);
 
 
       // Position galactic center
