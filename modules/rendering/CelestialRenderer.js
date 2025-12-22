@@ -12,8 +12,9 @@ export class CelestialRenderer {
     this.uiControls = uiControls;
   }
 
-  logCoordinates(object, azimuth, altitude) {
-    this.uiControls?.debugLog(`${object.constructor.name} az: ${Coordinates.toDegrees(azimuth).toFixed(2)}° alt: ${Coordinates.toDegrees(altitude).toFixed(2)}°`);
+  logCoordinates(objectOrName, azimuth, altitude) {
+    const name = typeof objectOrName === 'string' ? objectOrName : objectOrName.constructor.name;
+    this.uiControls?.debugLog(`${name} az: ${Coordinates.toDegrees(azimuth).toFixed(2)}° alt: ${Coordinates.toDegrees(altitude).toFixed(2)}°`);
   }
 
   updateHUDText(elementId, text) {
@@ -55,10 +56,8 @@ export class CelestialRenderer {
       const galacticRotations = GalacticCenter.currentMilkyWayPosition(lat, lon, date);
 
       // Log calculations
-      this.uiControls?.debugLog("Sun az: " + Coordinates.toDegrees(sunLoc.azimuth + Math.PI).toFixed(2) 
-                              + " alt: " + Coordinates.toDegrees(sunLoc.altitude).toFixed(2));
-      this.uiControls?.debugLog("Moon az: " + Coordinates.toDegrees(moonLoc.azimuth + Math.PI).toFixed(2)
-                              + " alt: " + Coordinates.toDegrees(moonLoc.altitude).toFixed(2));
+      this.logCoordinates("Sun", sunLoc.azimuth + Math.PI, sunLoc.altitude);
+      this.logCoordinates("Moon", moonLoc.azimuth + Math.PI, moonLoc.altitude);
 
       // Apply skybox rotations
       this.sceneManager.applySkyboxRotation(compassCorrection, galacticRotations);
