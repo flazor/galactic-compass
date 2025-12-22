@@ -16,6 +16,15 @@ export class CelestialRenderer {
     this.uiControls?.debugLog(`${object.constructor.name} az: ${Coordinates.toDegrees(azimuth).toFixed(2)}° alt: ${Coordinates.toDegrees(altitude).toFixed(2)}°`);
   }
 
+  updateHUDText(elementId, text) {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.setAttribute('value', text);
+    } else {
+      this.uiControls?.debugLog(`WARNING: Element ${elementId} not found`);
+    }
+  }
+
   renderCelestialScene(position, compassCorrection, currentTime = null) {
     if (!this.sceneManager || !position) return;
 
@@ -48,31 +57,31 @@ export class CelestialRenderer {
       // Earth rotation is to the East
       var er = new EarthRotation()
       this.sceneManager.positionCelestialBody('earthRotation', Math.PI/2, 0);
-      document.getElementById('earth-rotation-hud-text').setAttribute('value', Math.round(er.getVelocity(lat) * 100) / 100 + " km/s");
+      this.updateHUDText('earth-rotation-hud-text', Math.round(er.getVelocity(lat) * 100) / 100 + " km/s");
 
       var eo = new EarthOrbit();
       var eoDir = eo.getDirection(lat, lon, date);
       this.logCoordinates(eo, eoDir.azimuth, eoDir.altitude);
       this.sceneManager.positionCelestialBody('earthOrbit', eoDir.azimuth, eoDir.altitude);
-      document.getElementById('earth-orbit-hud-text').setAttribute('value', eo.getVelocity() + " km/s");
+      this.updateHUDText('earth-orbit-hud-text', eo.getVelocity() + " km/s");
 
       var so = new SolarOrbit();
       var soDir = so.getDirection(lat, lon, date);
       this.logCoordinates(so, soDir.azimuth, soDir.altitude);
       this.sceneManager.positionCelestialBody('solarOrbit', soDir.azimuth, soDir.altitude);
-      document.getElementById('solar-orbit-hud-text').setAttribute('value', so.getVelocity() + " km/s");
+      this.updateHUDText('solar-orbit-hud-text', so.getVelocity() + " km/s");
 
       var ap = new AndromedaPull();
       var apDir = ap.getDirection(lat, lon, date);
       this.logCoordinates(ap, apDir.azimuth, apDir.altitude);
       this.sceneManager.positionCelestialBody('andromedaPull', apDir.azimuth, apDir.altitude);
-      document.getElementById('andromeda-pull-hud-text').setAttribute('value', ap.getVelocity() + " km/s");
+      this.updateHUDText('andromeda-pull-hud-text', ap.getVelocity() + " km/s");
 
       var ga = new GreatAttractor();
       var gaDir = ga.getDirection(lat, lon, date);
       this.logCoordinates(ga, gaDir.azimuth, gaDir.altitude);
       this.sceneManager.positionCelestialBody('greatAttractor', gaDir.azimuth, gaDir.altitude);
-      document.getElementById('great-attractor-hud-text').setAttribute('value', ga.getVelocity() + " km/s");
+      this.updateHUDText('great-attractor-hud-text', ga.getVelocity() + " km/s");
 
 
       // Position galactic center
