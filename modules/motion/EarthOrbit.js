@@ -14,7 +14,7 @@ export class EarthOrbit {
    * @param {number} longitude - Observer's longitude in degrees (not used for orbital motion)
    * @returns {number} Velocity in km/s
    */
-  getOrbitalVelocity(latitude, longitude) {
+  getVelocity(latitude, longitude) {
     // Earth's orbital velocity is constant for all observers on Earth
     return this.orbitalSpeed;
   }

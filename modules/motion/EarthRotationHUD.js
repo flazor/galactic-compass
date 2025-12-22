@@ -16,7 +16,7 @@ export class EarthRotationHUD {
     this.uiControls?.debugLog('Showing Earth Rotation HUD');
 
     // Calculate velocity at this latitude
-    const velocity = this.earthRotation.getRotationalVelocity(position.lat, position.lon);
+    const velocity = this.earthRotation.getVelocity(position.lat, position.lon);
     
     // Get direction (always eastward)
     const direction = this.earthRotation.getDirection();

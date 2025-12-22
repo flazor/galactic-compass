@@ -13,7 +13,7 @@ export class SolarOrbit {
    * @param {number} longitude - Observer's longitude in degrees (not used for orbital motion)
    * @returns {number} Velocity in km/s
    */
-  getOrbitalVelocity(latitude, longitude) {
+  getVelocity(latitude, longitude) {
     // The solar system orbital velocity is constant for all observers on Earth
     return this.orbitalSpeed;
   }

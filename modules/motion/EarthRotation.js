@@ -9,7 +9,7 @@ export class EarthRotation {
    * @param {number} latitude - Observer's latitude in degrees
    * @returns {number} Velocity in km/s
    */
-  getRotationalVelocity(latitude) {
+  getVelocity(latitude) {
     // Convert latitude to radians
     const latRad = latitude * Math.PI / 180;
     

@@ -12,6 +12,10 @@ export class CelestialRenderer {
     this.uiControls = uiControls;
   }
 
+  logCoordinates(object, azimuth, altitude) {
+    this.uiControls?.debugLog(`${object.constructor.name} az: ${Coordinates.toDegrees(azimuth).toFixed(2)}° alt: ${Coordinates.toDegrees(altitude).toFixed(2)}°`);
+  }
+
   renderCelestialScene(position, compassCorrection, currentTime = null) {
     if (!this.sceneManager || !position) return;
 
@@ -25,10 +29,10 @@ export class CelestialRenderer {
       const galacticRotations = GalacticCenter.currentMilkyWayPosition(lat, lon, date);
 
       // Log calculations
-      this.uiControls?.debugLog("sun az: " + Coordinates.toDegrees(sunLoc.azimuth + Math.PI));
-      this.uiControls?.debugLog("sun alt: " + Coordinates.toDegrees(sunLoc.altitude));
-      this.uiControls?.debugLog("moon az: " + Coordinates.toDegrees(moonLoc.azimuth + Math.PI));
-      this.uiControls?.debugLog("moon alt: " + Coordinates.toDegrees(moonLoc.altitude));
+      this.uiControls?.debugLog("Sun az: " + Coordinates.toDegrees(sunLoc.azimuth + Math.PI).toFixed(2) 
+                              + " alt: " + Coordinates.toDegrees(sunLoc.altitude).toFixed(2));
+      this.uiControls?.debugLog("Moon az: " + Coordinates.toDegrees(moonLoc.azimuth + Math.PI).toFixed(2)
+                              + " alt: " + Coordinates.toDegrees(moonLoc.altitude).toFixed(2));
 
       // Apply skybox rotations
       this.sceneManager.applySkyboxRotation(compassCorrection, galacticRotations);
@@ -44,29 +48,29 @@ export class CelestialRenderer {
       // Earth rotation is to the East
       var er = new EarthRotation()
       this.sceneManager.positionCelestialBody('earthRotation', Math.PI/2, 0);
-      document.getElementById('earth-rotation-hud-text').setAttribute('value', Math.round(er.getRotationalVelocity(lat) * 100) / 100 + " km/s");
+      document.getElementById('earth-rotation-hud-text').setAttribute('value', Math.round(er.getVelocity(lat) * 100) / 100 + " km/s");
 
       var eo = new EarthOrbit();
       var eoDir = eo.getDirection(lat, lon, date);
-      this.uiControls?.debugLog("EO az: " + Coordinates.toDegrees(eoDir.azimuth) + " EO alt: " + Coordinates.toDegrees(eoDir.altitude));
+      this.logCoordinates(eo, eoDir.azimuth, eoDir.altitude);
       this.sceneManager.positionCelestialBody('earthOrbit', eoDir.azimuth, eoDir.altitude);
-      document.getElementById('earth-orbit-hud-text').setAttribute('value', eo.getOrbitalVelocity() + " km/s");
+      document.getElementById('earth-orbit-hud-text').setAttribute('value', eo.getVelocity() + " km/s");
 
       var so = new SolarOrbit();
       var soDir = so.getDirection(lat, lon, date);
-      this.uiControls?.debugLog("SO az: " + Coordinates.toDegrees(soDir.azimuth) + " SO alt: " + Coordinates.toDegrees(soDir.altitude));
+      this.logCoordinates(so, soDir.azimuth, soDir.altitude);
       this.sceneManager.positionCelestialBody('solarOrbit', soDir.azimuth, soDir.altitude);
-      document.getElementById('solar-orbit-hud-text').setAttribute('value', so.getOrbitalVelocity() + " km/s");
+      document.getElementById('solar-orbit-hud-text').setAttribute('value', so.getVelocity() + " km/s");
 
       var ap = new AndromedaPull();
       var apDir = ap.getDirection(lat, lon, date);
-      this.uiControls?.debugLog("AP az: " + Coordinates.toDegrees(apDir.azimuth) + " AP alt: " + Coordinates.toDegrees(apDir.altitude));
+      this.logCoordinates(ap, apDir.azimuth, apDir.altitude);
       this.sceneManager.positionCelestialBody('andromedaPull', apDir.azimuth, apDir.altitude);
       document.getElementById('andromeda-pull-hud-text').setAttribute('value', ap.getVelocity() + " km/s");
 
       var ga = new GreatAttractor();
       var gaDir = ga.getDirection(lat, lon, date);
-      this.uiControls?.debugLog("GA az: " + Coordinates.toDegrees(gaDir.azimuth) + " GA alt: " + Coordinates.toDegrees(gaDir.altitude));
+      this.logCoordinates(ga, gaDir.azimuth, gaDir.altitude);
       this.sceneManager.positionCelestialBody('greatAttractor', gaDir.azimuth, gaDir.altitude);
       document.getElementById('great-attractor-hud-text').setAttribute('value', ga.getVelocity() + " km/s");
 
