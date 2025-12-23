@@ -1,6 +1,4 @@
 import { Coordinates } from '../astronomy/Coordinates.js';
-import { AndromedaPull } from '../motion/AndromedaPull.js';
-import { EarthRotationHUD } from '../motion/EarthRotationHUD.js';
 
 export class SceneManager {
   constructor() {

@@ -1,10 +1,7 @@
 import { GalacticCenter } from '../astronomy/GalacticCenter.js';
 import { Coordinates } from '../astronomy/Coordinates.js';
 import { EarthOrbit } from '../motion/EarthOrbit.js';
-import { SolarOrbit } from '../motion/SolarOrbit.js';
-import { GreatAttractor } from '../motion/GreatAttractor.js';
 import { EarthRotation } from '../motion/EarthRotation.js';
-import { AndromedaPull } from '../motion/AndromedaPull.js';
 import { COSMIC_LEVELS } from '../config/CosmicLevels.js';
 
 export class CelestialRenderer {
@@ -66,12 +63,19 @@ export class CelestialRenderer {
   processMotionHUDsBasedOnLevels(lat, lon, date) {
     // Use level manager to determine which HUDs to show
     if (!this.levelManager) {
-      // Fallback: process all currently implemented motion HUDs
-      this.processMotionHUD(EarthRotation, 'earthRotation', 'earth-rotation-hud-text', lat, lon, date);
-      this.processMotionHUD(EarthOrbit, 'earthOrbit', 'earth-orbit-hud-text', lat, lon, date);
-      this.processMotionHUD(SolarOrbit, 'solarOrbit', 'solar-orbit-hud-text', lat, lon, date);
-      this.processMotionHUD(AndromedaPull, 'andromedaPull', 'andromeda-pull-hud-text', lat, lon, date);
-      this.processMotionHUD(GreatAttractor, 'greatAttractor', 'great-attractor-hud-text', lat, lon, date);
+      // Fallback: process all implemented motion HUDs using COSMIC_LEVELS data
+      const implementedLevels = COSMIC_LEVELS.filter(level => level.implemented);
+      implementedLevels.forEach(level => {
+        if (level.motionClass) {
+          this.processMotionHUDWithConfig(
+            level.motionClass,
+            level,
+            level.bodyId,
+            level.elementId,
+            lat, lon, date
+          );
+        }
+      });
       return;
     }
 

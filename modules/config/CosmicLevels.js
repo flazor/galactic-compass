@@ -13,9 +13,6 @@ import { Coordinates } from '../astronomy/Coordinates.js';
 import { EarthRotation } from '../motion/EarthRotation.js'; // Custom velocity logic
 import { EarthOrbit } from '../motion/EarthOrbit.js'; // Custom orbital calculations  
 import { CosmicMotion } from '../motion/CosmicMotion.js'; // Generic for simple motions
-import { SolarOrbit } from '../motion/SolarOrbit.js';
-import { AndromedaPull } from '../motion/AndromedaPull.js'; // Will become LocalGroupMotion
-import { GreatAttractor } from '../motion/GreatAttractor.js';
 
 /**
  * Convert RA (hours) and Dec (degrees) to decimal values
@@ -113,24 +110,24 @@ export const COSMIC_LEVELS = [
     level: 3,
     id: 'solarOrbit',
     name: 'Solar System\'s Galactic Orbit',
-    description: 'Solar System orbits around the Milky Way center',
+    description: 'Solar System orbits around the Milky Way center while oscillating above/below the galactic plane',
     
     // Physics
     velocity: 220, // km/s
     velocityDescription: '~220 km/s',
-    direction: 'Toward Hercules/Cygnus (Solar Apex)',
-    period: '~230 million years',
+    direction: 'Toward Lyra/Hercules (Solar Apex)',
+    period: '~230 million years (orbital) + ~30 million years (galactic plane oscillation)',
     
     // Scale
     scale: 52000, // light-years (galactic orbit diameter)
     scaleDescription: 'Galactic orbit diameter = ~52,000 light-years',
     
-    // Coordinates (RA/Dec)
+    // Coordinates (RA/Dec) - Solar Apex direction
     coordinates: {
       type: 'radec',
-      ra: parseRA('18h 28m'), // 18.47 hours
-      dec: parseDec('+30°'), // +30 degrees
-      description: 'RA: 18h 28m, Dec: +30° (Near: Vega, M13)'
+      ra: 18.8167, // 18h 49m 15.8s (toward Lyra constellation)
+      dec: 35.7983, // +35° 47' 53.6" (toward Vega region)
+      description: 'RA: 18h 49m, Dec: +35° 48\' (Solar Apex in Lyra, near Vega)'
     },
     
     // Implementation
@@ -140,8 +137,9 @@ export const COSMIC_LEVELS = [
     elementId: 'solar-orbit-hud-text',
     
     // Historical
-    discoverer: 'William Herschel (1783)',
-    references: 'Herschel, W. (1783); Dehnen & Binney (1998), MNRAS, 298, 387'
+    discoverer: 'William Herschel (1783) - solar apex direction; Jan Oort (1927) - galactic rotation',
+    references: 'Herschel, W. (1783); Oort, J. (1927), Bull. Astron. Inst. Netherlands, 3, 275; Dehnen & Binney (1998), MNRAS, 298, 387',
+    notes: 'Solar System oscillates ~27 parsecs above/below galactic plane with period ~33 Myr (galactic year ~230 Myr). Current motion: ~7 km/s northward from galactic plane.'
   },
   
   {
@@ -151,8 +149,8 @@ export const COSMIC_LEVELS = [
     description: 'Milky Way + Andromeda + ~50 galaxies falling toward each other',
     
     // Physics
-    velocity: 120, // km/s
-    velocityDescription: '~120 km/s (Andromeda approach)',
+    velocity: 110, // km/s
+    velocityDescription: '~110 km/s (Andromeda approach)',
     direction: 'Toward M31 (Andromeda Galaxy)',
     period: '~4.5 billion years until collision',
     
@@ -160,17 +158,17 @@ export const COSMIC_LEVELS = [
     scale: 10000000, // light-years (10 million ly)
     scaleDescription: 'Local Group diameter = ~10 million light-years',
     
-    // Coordinates (RA/Dec)
+    // Coordinates (RA/Dec) - Andromeda Galaxy (M31)
     coordinates: {
       type: 'radec',
-      ra: parseRA('00h 42m'), // 0.7 hours
-      dec: parseDec('+41°'), // +41 degrees
-      description: 'RA: 00h 42m, Dec: +41° (2.5 million ly distant, Near: Triangulum, Mirach)'
+      ra: 0.74, // 00h 44m 10.2s (precise Andromeda position)
+      dec: 41.4, // +41° 24' 55.5" (precise Andromeda position)
+      description: 'RA: 00h 44m, Dec: +41° 25\' (M31 Andromeda Galaxy, 2.5 million ly distant)'
     },
     
     // Implementation
-    implemented: true, // Currently AndromedaPull - needs refactoring
-    motionClass: CosmicMotion, // Use generic motion class (was AndromedaPull)
+    implemented: true,
+    motionClass: CosmicMotion, // Generic motion class for simple constant velocity + RA/Dec
     bodyId: 'andromedaPull', // Will become localGroupMotion
     elementId: 'andromeda-pull-hud-text', // Will become local-group-motion-hud-text
     
@@ -230,12 +228,12 @@ export const COSMIC_LEVELS = [
     scale: 400000000, // light-years (300-500 million ly span)
     scaleDescription: 'Structure spans ~300-500 million light-years (center at ~150-250 million ly)',
     
-    // Coordinates (RA/Dec)
+    // Coordinates (RA/Dec) - Norma Cluster (ACO 3627)
     coordinates: {
       type: 'radec',
-      ra: parseRA('16h 15m'), // 16.25 hours
-      dec: parseDec('-61°'), // -61 degrees
-      description: 'RA: 16h 15m, Dec: -61°'
+      ra: 16.27, // 16h 16m 35.8s (Norma Cluster center)
+      dec: -60.92, // -60° 55' 56.7" (Norma Cluster center)
+      description: 'RA: 16h 16m, Dec: -60° 56\' (Norma Cluster/ACO 3627, Great Attractor center)'
     },
     
     // Implementation
