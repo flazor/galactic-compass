@@ -28,11 +28,11 @@
       </div>
       
       <div style="margin-bottom: 10px;">
-        <span id="levelDisplayText">Showing up to Level 6</span>
+        <span id="levelDisplayText">Showing up to Level 8</span>
       </div>
       
       <div style="margin-bottom: 15px;">
-        <input type="range" id="levelSlider" min="1" max="8" value="6" 
+        <input type="range" id="levelSlider" min="1" max="8" value="8" 
                style="width: 100%; height: 20px; background: #003300; border-radius: 10px;">
       </div>
       
@@ -96,6 +96,21 @@
         <a-sphere id="great-attractor-sphere" position="-2 0 0" color="#FF00FF" radius="0.01"></a-sphere>
         <a-circle id="great-attractor-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#FF00FF" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
         <a-text id="great-attractor-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#FF00FF"></a-text>
+      </a-entity>
+      <a-entity id="virgo-cluster-infall-container" look-at="[camera]">
+        <a-sphere id="virgo-cluster-infall-sphere" position="-2 0 0" color="#00FFFF" radius="0.01"></a-sphere>
+        <a-circle id="virgo-cluster-infall-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#00FFFF" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="virgo-cluster-infall-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#00FFFF"></a-text>
+      </a-entity>
+      <a-entity id="shapley-supercluster-container" look-at="[camera]">
+        <a-sphere id="shapley-supercluster-sphere" position="-2 0 0" color="#FFA500" radius="0.01"></a-sphere>
+        <a-circle id="shapley-supercluster-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#FFA500" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="shapley-supercluster-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#FFA500"></a-text>
+      </a-entity>
+      <a-entity id="cmb-dipole-container" look-at="[camera]">
+        <a-sphere id="cmb-dipole-sphere" position="-2 0 0" color="#FFFFFF" radius="0.01"></a-sphere>
+        <a-circle id="cmb-dipole-hud-plane" position="-2.1 0 0" rotation="0 90 0" color="#FFFFFF" radius="0.5" material="transparent: true; opacity: 0.2; side: double; depthWrite: false;"></a-circle>
+        <a-text id="cmb-dipole-hud-text" position="-2 0 0" rotation="0 90 0" value="+" color="#FFFFFF"></a-text>
       </a-entity>
 
     </a-scene>

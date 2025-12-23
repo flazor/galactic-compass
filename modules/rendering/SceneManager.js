@@ -24,7 +24,10 @@ export class SceneManager {
       earthOrbit: document.getElementById('earth-orbit-container'),
       solarOrbit: document.getElementById('solar-orbit-container'),
       andromedaPull: document.getElementById('andromeda-pull-container'),
+      virgoClusterInfall: document.getElementById('virgo-cluster-infall-container'),
       greatAttractor: document.getElementById('great-attractor-container'),
+      shapleySuperercluster: document.getElementById('shapley-supercluster-container'),
+      cmbDipole: document.getElementById('cmb-dipole-container'),
       milkyWay: document.getElementById('milky-way-container'),
       sun: document.getElementById('sun-container'),
       moon: document.getElementById('moon-container'),
@@ -117,7 +120,10 @@ export class SceneManager {
 
   // Hide all motion containers
   hideAllMotionContainers() {
-    const motionContainers = ['earthRotation', 'earthOrbit', 'solarOrbit', 'andromedaPull', 'greatAttractor'];
+    const motionContainers = [
+      'earthRotation', 'earthOrbit', 'solarOrbit', 'andromedaPull', 
+      'virgoClusterInfall', 'greatAttractor', 'shapleySuperercluster', 'cmbDipole'
+    ];
     motionContainers.forEach(name => {
       this.setMotionContainerVisibility(name, false);
     });

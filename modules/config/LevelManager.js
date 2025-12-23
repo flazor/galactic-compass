@@ -8,8 +8,8 @@ export class LevelManager {
   constructor(uiControls) {
     this.uiControls = uiControls;
     
-    // Default state: show up to level 6 (current max implemented: Great Attractor)
-    this.maxLevel = 6;
+    // Default state: show up to level 8 (all cosmic motion levels implemented)
+    this.maxLevel = 8;
     this.isUIVisible = false;
     
     // Event listeners for level changes

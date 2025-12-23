@@ -45,6 +45,24 @@ export class CelestialRenderer {
     this.updateHUDText(elementId, `${velocity} km/s`);
   }
 
+  processMotionHUDWithConfig(MotionClass, levelConfig, bodyId, elementId, lat, lon, date) {
+    // Create instance with configuration for CosmicMotion, or without for specialized classes
+    const instance = new MotionClass(levelConfig);
+    
+    // Get direction from instance
+    const direction = instance.getDirection(lat, lon, date);
+    
+    // Log coordinates
+    this.logCoordinates(levelConfig.name, direction.azimuth, direction.altitude);
+    
+    // Position the celestial body
+    this.sceneManager.positionCelestialBody(bodyId, direction.azimuth, direction.altitude);
+    
+    // Update HUD text with velocity
+    const velocity = instance.getVelocity(lat, lon);
+    this.updateHUDText(elementId, `${velocity} km/s`);
+  }
+
   processMotionHUDsBasedOnLevels(lat, lon, date) {
     // Use level manager to determine which HUDs to show
     if (!this.levelManager) {
@@ -71,9 +89,10 @@ export class CelestialRenderer {
         // Show the container
         this.sceneManager.setMotionContainerVisibility(level.bodyId, true);
         
-        // Process the motion HUD
-        this.processMotionHUD(
+        // Process the motion HUD with level configuration
+        this.processMotionHUDWithConfig(
           level.motionClass, 
+          level, // Pass the full level config
           level.bodyId, 
           level.elementId, 
           lat, lon, date

@@ -9,9 +9,10 @@
 
 import { Coordinates } from '../astronomy/Coordinates.js';
 
-// Motion class imports (for existing levels)
-import { EarthRotation } from '../motion/EarthRotation.js';
-import { EarthOrbit } from '../motion/EarthOrbit.js';
+// Motion class imports
+import { EarthRotation } from '../motion/EarthRotation.js'; // Custom velocity logic
+import { EarthOrbit } from '../motion/EarthOrbit.js'; // Custom orbital calculations  
+import { CosmicMotion } from '../motion/CosmicMotion.js'; // Generic for simple motions
 import { SolarOrbit } from '../motion/SolarOrbit.js';
 import { AndromedaPull } from '../motion/AndromedaPull.js'; // Will become LocalGroupMotion
 import { GreatAttractor } from '../motion/GreatAttractor.js';
@@ -134,7 +135,7 @@ export const COSMIC_LEVELS = [
     
     // Implementation
     implemented: true,
-    motionClass: SolarOrbit,
+    motionClass: CosmicMotion, // Use generic motion class
     bodyId: 'solarOrbit',
     elementId: 'solar-orbit-hud-text',
     
@@ -169,7 +170,7 @@ export const COSMIC_LEVELS = [
     
     // Implementation
     implemented: true, // Currently AndromedaPull - needs refactoring
-    motionClass: AndromedaPull, // Will become LocalGroupMotion
+    motionClass: CosmicMotion, // Use generic motion class (was AndromedaPull)
     bodyId: 'andromedaPull', // Will become localGroupMotion
     elementId: 'andromeda-pull-hud-text', // Will become local-group-motion-hud-text
     
@@ -203,8 +204,8 @@ export const COSMIC_LEVELS = [
     },
     
     // Implementation
-    implemented: false,
-    motionClass: null, // Will create VirgoClusterInfall
+    implemented: true,
+    motionClass: CosmicMotion, // Generic motion class
     bodyId: 'virgoClusterInfall',
     elementId: 'virgo-cluster-infall-hud-text',
     
@@ -239,7 +240,7 @@ export const COSMIC_LEVELS = [
     
     // Implementation
     implemented: true,
-    motionClass: GreatAttractor,
+    motionClass: CosmicMotion, // Use generic motion class
     bodyId: 'greatAttractor',
     elementId: 'great-attractor-hud-text',
     
@@ -273,8 +274,8 @@ export const COSMIC_LEVELS = [
     },
     
     // Implementation
-    implemented: false,
-    motionClass: null, // Will create ShapleySuperercluster
+    implemented: true,
+    motionClass: CosmicMotion, // Generic motion class
     bodyId: 'shapleySuperercluster',
     elementId: 'shapley-supercluster-hud-text',
     
@@ -309,8 +310,8 @@ export const COSMIC_LEVELS = [
     },
     
     // Implementation
-    implemented: false,
-    motionClass: null, // Will create CMBDipole
+    implemented: true,
+    motionClass: CosmicMotion, // Generic motion class
     bodyId: 'cmbDipole',
     elementId: 'cmb-dipole-hud-text',
     
