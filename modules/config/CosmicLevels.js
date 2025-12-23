@@ -169,8 +169,8 @@ export const COSMIC_LEVELS = [
     // Implementation
     implemented: true,
     motionClass: CosmicMotion, // Generic motion class for simple constant velocity + RA/Dec
-    bodyId: 'andromedaPull', // Will become localGroupMotion
-    elementId: 'andromeda-pull-hud-text', // Will become local-group-motion-hud-text
+    bodyId: 'localGroupMerger',
+    elementId: 'local-group-merger-hud-text',
     
     // Historical
     discoverer: 'Vesto Slipher (1912) - detected Andromeda\'s blueshift',
@@ -239,8 +239,8 @@ export const COSMIC_LEVELS = [
     // Implementation
     implemented: true,
     motionClass: CosmicMotion, // Use generic motion class
-    bodyId: 'greatAttractor',
-    elementId: 'great-attractor-hud-text',
+    bodyId: 'greatAttractorPull',
+    elementId: 'great-attractor-pull-hud-text',
     
     // Historical
     discoverer: 'Alan Dressler (1987)',
@@ -274,8 +274,8 @@ export const COSMIC_LEVELS = [
     // Implementation
     implemented: true,
     motionClass: CosmicMotion, // Generic motion class
-    bodyId: 'shapleySuperercluster',
-    elementId: 'shapley-supercluster-hud-text',
+    bodyId: 'shapleySupererclusterPull',
+    elementId: 'shapley-supercluster-pull-hud-text',
     
     // Historical
     discoverer: 'Harlow Shapley (1930)',
@@ -310,8 +310,8 @@ export const COSMIC_LEVELS = [
     // Implementation
     implemented: true,
     motionClass: CosmicMotion, // Generic motion class
-    bodyId: 'cmbDipole',
-    elementId: 'cmb-dipole-hud-text',
+    bodyId: 'cmbDipoleMotion',
+    elementId: 'cmb-dipole-motion-hud-text',
     
     // Historical
     discoverer: 'Edward Conklin (1969) - first detection; Paul Henry (1971) - declination; Brian Corey & David Wilkinson (1976) - confirmation',

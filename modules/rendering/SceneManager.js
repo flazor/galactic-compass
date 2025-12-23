@@ -21,11 +21,11 @@ export class SceneManager {
       earthRotation: document.getElementById('earth-rotation-container'),
       earthOrbit: document.getElementById('earth-orbit-container'),
       solarOrbit: document.getElementById('solar-orbit-container'),
-      andromedaPull: document.getElementById('andromeda-pull-container'),
+      localGroupMerger: document.getElementById('local-group-merger-container'),
       virgoClusterInfall: document.getElementById('virgo-cluster-infall-container'),
-      greatAttractor: document.getElementById('great-attractor-container'),
-      shapleySuperercluster: document.getElementById('shapley-supercluster-container'),
-      cmbDipole: document.getElementById('cmb-dipole-container'),
+      greatAttractorPull: document.getElementById('great-attractor-pull-container'),
+      shapleySupererclusterPull: document.getElementById('shapley-supercluster-pull-container'),
+      cmbDipoleMotion: document.getElementById('cmb-dipole-motion-container'),
       milkyWay: document.getElementById('milky-way-container'),
       sun: document.getElementById('sun-container'),
       moon: document.getElementById('moon-container'),
@@ -119,8 +119,8 @@ export class SceneManager {
   // Hide all motion containers
   hideAllMotionContainers() {
     const motionContainers = [
-      'earthRotation', 'earthOrbit', 'solarOrbit', 'andromedaPull', 
-      'virgoClusterInfall', 'greatAttractor', 'shapleySuperercluster', 'cmbDipole'
+      'earthRotation', 'earthOrbit', 'solarOrbit', 'localGroupMerger', 
+      'virgoClusterInfall', 'greatAttractorPull', 'shapleySupererclusterPull', 'cmbDipoleMotion'
     ];
     motionContainers.forEach(name => {
       this.setMotionContainerVisibility(name, false);
