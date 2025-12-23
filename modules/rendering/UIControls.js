@@ -227,6 +227,11 @@ export class UIControls {
 
     this.levelPanel.style.display = 'block';
     
+    // Update gear button to show it's active (green border)
+    if (this.levelToggleBtn) {
+      this.levelToggleBtn.style.borderColor = '#00FF00';
+    }
+    
     this.debugLog('Cosmic level controls opened');
   }
 
@@ -234,6 +239,11 @@ export class UIControls {
     if (!this.levelPanel) return;
 
     this.levelPanel.style.display = 'none';
+    
+    // Update gear button to show it's inactive (white border)
+    if (this.levelToggleBtn) {
+      this.levelToggleBtn.style.borderColor = 'white';
+    }
     
     this.debugLog('Cosmic level controls closed');
   }

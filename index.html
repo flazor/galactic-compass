@@ -13,16 +13,16 @@
       }
     </script>
     <button id="reloadButton" style="position: fixed; top: 10px; left: 10px;">&#x21bb;</button>
-    <button id="hiResButton" style="position: fixed; top: 10px; right: 10px;">
+    <button id="hiResButton" style="position: fixed; top: 10px; right: 60px;">
       Hi-Res
     </button>
     
     <!-- Cosmic Level Controls -->
-    <button id="levelControlsToggle" style="position: fixed; top: 60px; left: 10px; background: rgba(0,0,0,0.8); color: #00FF00; border: 1px solid #00FF00; border-radius: 4px; padding: 8px; font-size: 16px; cursor: pointer;" title="Cosmic Motion Levels">
+    <button id="levelControlsToggle" style="position: fixed; top: 10px; right: 10px; color: #00FF00; border-color: white;" title="Cosmic Motion Levels">
       ⚙️
     </button>
     
-    <div id="levelControlsPanel" style="position: fixed; top: 60px; left: 60px; background: rgba(0,0,0,0.9); border: 1px solid #00FF00; border-radius: 8px; padding: 15px; color: #00FF00; font-family: monospace; font-size: 12px; z-index: 10000; display: none; width: 280px;">
+    <div id="levelControlsPanel" style="position: fixed; top: 60px; left: 10px; right: 10px; background: rgba(0,0,0,0.5); border: 1px solid #00FF00; border-radius: 8px; padding: 15px; color: #00FF00; font-family: monospace; font-size: 12px; z-index: 10000; display: none;">
       <div style="margin-bottom: 15px; font-size: 14px; text-align: center; border-bottom: 1px solid #00FF00; padding-bottom: 8px;">
         Cosmic Motion Levels
       </div>
@@ -46,7 +46,7 @@
         <div id="levelStats">6 of 8 levels • 5 implemented</div>
       </div>
     </div>
-    <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #00FF00; padding: 10px; border-radius: 8px; font-size: 12px; width: 90vw; max-height: 18px; overflow-y: auto; z-index: 9999; font-family: monospace; cursor: pointer; transition: max-height 0.3s ease;" onclick="toggleDebugExpansion()">
+    <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.5); color: #00FF00; padding: 10px; border-radius: 8px; font-size: 12px; width: 90vw; max-height: 18px; overflow-y: auto; z-index: 9999; font-family: monospace; cursor: pointer; transition: max-height 0.3s ease;" onclick="toggleDebugExpansion()">
       Debug info will appear here... (click to expand)
     </div>
     <a-scene vr-mode-ui="enabled: false" button>
