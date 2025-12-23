@@ -90,6 +90,18 @@ function loadBG() {
     // Add level change listener to update motion container visibility when level changes
     levelManager.addLevelChangeListener((oldLevel, newLevel) => {
       celestialRenderer.updateMotionContainerVisibility();
+      
+      // Calculate and log vector sum for current levels
+      const position = geolocation.getPosition();
+      if (position) {
+        const vectorSum = celestialRenderer.calculateVectorSum(position.lat, position.lon, new Date());
+        if (vectorSum) {
+          const resultant = vectorSum.getResultant();
+          if (resultant) {
+            uiControls.debugLog(`Level ${newLevel}: Total velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az  ${Math.round(resultant.altitudeDegrees)}° alt`);
+          }
+        }
+      }
     });
     
     // Version info for debugging (after UI is initialized)
@@ -127,6 +139,15 @@ async function handleDeviceReady(heading) {
     
     // Render the celestial scene using the new rendering system
     celestialRenderer.renderCelestialScene(position, compassCorrection);
+    
+    // Calculate initial vector sum
+    const vectorSum = celestialRenderer.calculateVectorSum(position.lat, position.lon, new Date());
+    if (vectorSum) {
+      const resultant = vectorSum.getResultant();
+      if (resultant) {
+        uiControls.debugLog(`Initial: Total velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
+      }
+    }
   } catch (error) {
     uiControls.debugLog('ERROR in handleDeviceReady: ' + error.message);
   }

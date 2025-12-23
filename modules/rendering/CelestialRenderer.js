@@ -3,6 +3,7 @@ import { Coordinates } from '../astronomy/Coordinates.js';
 import { EarthOrbit } from '../motion/EarthOrbit.js';
 import { EarthRotation } from '../motion/EarthRotation.js';
 import { COSMIC_LEVELS } from '../config/CosmicLevels.js';
+import { VectorSum } from '../math/VectorSum.js';
 
 export class CelestialRenderer {
   constructor(sceneManager, uiControls, levelManager = null) {
@@ -176,6 +177,80 @@ export class CelestialRenderer {
     });
     
     this.uiControls?.debugLog(`Updated visibility: showing ${activeLevels.length} motion containers`);
+  }
+
+  // Calculate vector sum of all active motion levels
+  calculateVectorSum(lat, lon, date) {
+    if (!this.levelManager) return null;
+
+    const vectorSum = new VectorSum();
+    const activeLevels = this.levelManager.getActiveImplementedLevels();
+    
+    activeLevels.forEach(level => {
+      if (level.motionClass && level.implemented) {
+        try {
+          // Create motion class instance with level configuration
+          const instance = new level.motionClass(level);
+          
+          // Get velocity and direction
+          const velocity = instance.getVelocity(lat, lon);
+          const direction = instance.getDirection(lat, lon, date);
+          
+          // Add to vector sum
+          vectorSum.addVector(
+            level.name,
+            velocity,
+            direction.azimuth,
+            direction.altitude,
+            { level: level.level, id: level.id }
+          );
+        } catch (error) {
+          this.uiControls?.debugLog(`Vector sum error for ${level.name}: ${error.message}`);
+        }
+      }
+    });
+
+    const resultant = vectorSum.getResultant();
+    if (resultant) {
+      this.uiControls?.debugLog(`Total velocity: ${Math.round(resultant.magnitude)} km/s toward ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
+      
+      // Update UI display
+      this.updateVectorSumDisplay(vectorSum);
+    }
+
+    return vectorSum;
+  }
+
+  // Update the vector sum display in the UI
+  updateVectorSumDisplay(vectorSum) {
+    const vectorSumElement = document.getElementById('vectorSumText');
+    if (!vectorSumElement || !vectorSum) return;
+    
+    const resultant = vectorSum.getResultant();
+    if (!resultant) {
+      vectorSumElement.innerHTML = 'No motion vectors active';
+      return;
+    }
+    
+    const speed = Math.round(resultant.magnitude);
+    const azimuth = Math.round(resultant.azimuthDegrees);
+    const altitude = Math.round(resultant.altitudeDegrees);
+    
+    // Create detailed display
+    const summary = vectorSum.getSummary();
+    const vectorList = summary.vectors
+      .map(v => `${v.name}: ${v.magnitude} km/s`)
+      .join('<br>');
+    
+    vectorSumElement.innerHTML = `
+      <div style="font-weight: bold; color: #FFFF00;">
+        ${speed} km/s @ ${azimuth}° az, ${altitude}° alt
+      </div>
+      <div style="margin-top: 4px; opacity: 0.8; font-size: 9px;">
+        ${summary.vectorCount} active motions:<br>
+        ${vectorList}
+      </div>
+    `;
   }
 
   // Wait for texture to actually render (used by hi-res loading)

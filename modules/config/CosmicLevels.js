@@ -289,7 +289,7 @@ export const COSMIC_LEVELS = [
     description: 'Net motion relative to Cosmic Microwave Background - our ultimate reference frame',
     
     // Physics
-    velocity: 370, // km/s net
+    velocity: 369.82, // km/s net
     velocityDescription: '~370 km/s net',
     direction: 'Toward Leo/Crater boundary',
     period: 'N/A (cosmic reference frame)',
