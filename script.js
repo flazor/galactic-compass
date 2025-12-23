@@ -84,6 +84,14 @@ function loadBG() {
     sceneManager.initialize();
     uiControls.initialize();
     
+    // Connect UI controls to level manager
+    uiControls.connectLevelManager(levelManager);
+    
+    // Add level change listener to update motion container visibility when level changes
+    levelManager.addLevelChangeListener((oldLevel, newLevel) => {
+      celestialRenderer.updateMotionContainerVisibility();
+    });
+    
     // Version info for debugging (after UI is initialized)
     uiControls.debugLog(`Tilt Meter v${VERSION}`);
     uiControls.debugLog('Rendering system initialized');

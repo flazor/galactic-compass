@@ -57,14 +57,21 @@ export class CelestialRenderer {
       return;
     }
 
+    // Hide all motion containers first
+    this.sceneManager.hideAllMotionContainers();
+
     // Get active implemented levels from level manager
     const activeLevels = this.levelManager.getActiveImplementedLevels();
     
     this.uiControls?.debugLog(`Processing ${activeLevels.length} active motion HUDs (max level: ${this.levelManager.getMaxLevel()})`);
 
-    // Process each active level
+    // Process and show each active level
     activeLevels.forEach(level => {
       if (level.motionClass && level.implemented) {
+        // Show the container
+        this.sceneManager.setMotionContainerVisibility(level.bodyId, true);
+        
+        // Process the motion HUD
         this.processMotionHUD(
           level.motionClass, 
           level.bodyId, 
@@ -128,6 +135,24 @@ export class CelestialRenderer {
     
     this.sceneManager.updateSkyboxTexture(imageSrc);
     this.uiControls?.debugLog(`Skybox texture updated (${imageSrc.length} chars)`);
+  }
+
+  // Update motion container visibility based on current level settings
+  updateMotionContainerVisibility() {
+    if (!this.levelManager) return;
+    
+    // Hide all motion containers first
+    this.sceneManager.hideAllMotionContainers();
+    
+    // Show containers for active levels
+    const activeLevels = this.levelManager.getActiveImplementedLevels();
+    activeLevels.forEach(level => {
+      if (level.implemented) {
+        this.sceneManager.setMotionContainerVisibility(level.bodyId, true);
+      }
+    });
+    
+    this.uiControls?.debugLog(`Updated visibility: showing ${activeLevels.length} motion containers`);
   }
 
   // Wait for texture to actually render (used by hi-res loading)

@@ -106,4 +106,20 @@ export class SceneManager {
   getSkybox() {
     return this.skybox;
   }
+
+  // Set visibility of a motion container
+  setMotionContainerVisibility(containerName, visible) {
+    const container = this.containers[containerName];
+    if (container) {
+      container.setAttribute('visible', visible);
+    }
+  }
+
+  // Hide all motion containers
+  hideAllMotionContainers() {
+    const motionContainers = ['earthRotation', 'earthOrbit', 'solarOrbit', 'andromedaPull', 'greatAttractor'];
+    motionContainers.forEach(name => {
+      this.setMotionContainerVisibility(name, false);
+    });
+  }
 }

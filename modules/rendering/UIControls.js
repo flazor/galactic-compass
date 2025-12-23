@@ -5,14 +5,39 @@ export class UIControls {
     this.reloadBtn = null;
     this.hiResBtn = null;
     this.loadingIndicator = null;
+    
+    // Level controls
+    this.levelToggleBtn = null;
+    this.levelPanel = null;
+    this.levelSlider = null;
+    this.levelDisplayText = null;
+    this.levelDescription = null;
+    this.levelStats = null;
+    this.levelManager = null;
+    
+    // Initialization flag to prevent duplicate event listeners
+    this.initialized = false;
   }
 
   initialize() {
+    // Prevent duplicate initialization
+    if (this.initialized) {
+      return true;
+    }
+
     // Cache UI element references
     this.debugDiv = document.getElementById('debugOutput');
     this.reloadBtn = document.getElementById('reloadButton');
     this.hiResBtn = document.getElementById('hiResButton');
     this.loadingIndicator = document.getElementById('loading-indicator');
+    
+    // Cache level control references
+    this.levelToggleBtn = document.getElementById('levelControlsToggle');
+    this.levelPanel = document.getElementById('levelControlsPanel');
+    this.levelSlider = document.getElementById('levelSlider');
+    this.levelDisplayText = document.getElementById('levelDisplayText');
+    this.levelDescription = document.getElementById('levelDescription');
+    this.levelStats = document.getElementById('levelStats');
 
     // Set up event listeners
     if (this.reloadBtn) {
@@ -21,13 +46,12 @@ export class UIControls {
       });
     }
 
-    // Set up debug div click handler
-    if (this.debugDiv) {
-      this.debugDiv.addEventListener('click', () => {
-        this.toggleDebugExpansion();
-      });
-    }
+    // Note: Debug div uses onclick="toggleDebugExpansion()" in HTML
 
+    // Set up level controls event listeners
+    this.setupLevelControls();
+
+    this.initialized = true;
     return true;
   }
 
@@ -140,5 +164,124 @@ export class UIControls {
     if (this.loadingIndicator) {
       this.loadingIndicator.style.display = 'none';
     }
+  }
+
+  // Level Control Methods
+
+  setupLevelControls() {
+    // Set up gear icon toggle
+    if (this.levelToggleBtn) {
+      this.levelToggleBtn.addEventListener('click', (event) => {
+        event.stopPropagation(); // Prevent bubbling to document click listener
+        this.toggleLevelPanel();
+      });
+    }
+
+    // Set up slider
+    if (this.levelSlider) {
+      this.levelSlider.addEventListener('input', (event) => {
+        const level = parseInt(event.target.value);
+        this.onLevelSliderChange(level);
+      });
+    }
+
+    // Close panel when clicking outside (simple version)
+    document.addEventListener('click', (event) => {
+      if (this.levelPanel && this.levelPanel.style.display !== 'none') {
+        if (!this.levelPanel.contains(event.target) && 
+            !this.levelToggleBtn.contains(event.target)) {
+          this.hideLevelPanel();
+        }
+      }
+    });
+  }
+
+  connectLevelManager(levelManager) {
+    this.levelManager = levelManager;
+    
+    // Listen for level changes to update UI
+    if (this.levelManager) {
+      this.levelManager.addLevelChangeListener((oldLevel, newLevel) => {
+        this.updateLevelDisplay(newLevel);
+      });
+      
+      // Initialize UI with current level
+      this.updateLevelDisplay(this.levelManager.getMaxLevel());
+    }
+  }
+
+  toggleLevelPanel() {
+    if (!this.levelPanel) return;
+
+    const isVisible = this.levelPanel.style.display !== 'none';
+    
+    if (isVisible) {
+      this.hideLevelPanel();
+    } else {
+      this.showLevelPanel();
+    }
+  }
+
+  showLevelPanel() {
+    if (!this.levelPanel) return;
+
+    this.levelPanel.style.display = 'block';
+    
+    this.debugLog('Cosmic level controls opened');
+  }
+
+  hideLevelPanel() {
+    if (!this.levelPanel) return;
+
+    this.levelPanel.style.display = 'none';
+    
+    this.debugLog('Cosmic level controls closed');
+  }
+
+  onLevelSliderChange(level) {
+    if (this.levelManager) {
+      this.levelManager.setMaxLevel(level);
+    } else {
+      this.debugLog(`Level slider changed to: ${level} (no level manager connected)`);
+    }
+  }
+
+  updateLevelDisplay(level) {
+    // Update slider position
+    if (this.levelSlider) {
+      this.levelSlider.value = level;
+    }
+
+    // Update display text
+    if (this.levelDisplayText) {
+      this.levelDisplayText.textContent = `Showing up to Level ${level}`;
+    }
+
+    // Update level description
+    this.updateLevelDescription(level);
+
+    // Update stats
+    this.updateLevelStats(level);
+  }
+
+  updateLevelDescription(level) {
+    if (!this.levelDescription || !this.levelManager) return;
+
+    const levelConfig = this.levelManager.getLevelConfig(level);
+    if (levelConfig) {
+      const implementedText = levelConfig.implemented ? '' : ' (Not Implemented)';
+      this.levelDescription.innerHTML = `
+        <strong>${levelConfig.name}${implementedText}</strong><br>
+        ${levelConfig.description}<br>
+        ${levelConfig.velocityDescription} ${levelConfig.direction}
+      `;
+    }
+  }
+
+  updateLevelStats(level) {
+    if (!this.levelStats || !this.levelManager) return;
+
+    const state = this.levelManager.getStateDescription();
+    this.levelStats.textContent = `${state.maxLevel} of 8 levels • ${state.implementedLevels} implemented`;
   }
 }
