@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cosmic Tilt Meter</title>
+  <script src="lib/suncalc.js"></script>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --accent-color: #0066cc;
+      --border-color: #cccccc;
+      --input-bg: #f5f5f5;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #000000;
+        --text-color: #00ff00;
+        --accent-color: #ffff00;
+        --border-color: #00ff00;
+        --input-bg: #000000;
+      }
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      font-weight: bold;
+      position: relative;
+    }
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: var(--accent-color);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin: 0;
+      flex: 1;
+    }
+    .controls {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px 0;
+      color: var(--accent-color);
+    }
+    input, select, button {
+      font-family: 'Courier New', monospace;
+      background: var(--input-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 5px 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+    }
+    select {
+      cursor: pointer;
+    }
+    button {
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+    button.inline-button {
+      width: auto;
+      padding: 5px 15px;
+      margin-top: 5px;
+      font-size: 12px;
+    }
+    button.main-button {
+      width: 100%;
+      margin-top: 15px;
+    }
+    .playback-controls {
+      margin-left: 20px;
+    }
+    .playback-controls button {
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .presets {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 2px solid var(--accent-color);
+      background: var(--input-bg);
+    }
+    .presets label {
+      color: var(--text-color);
+      margin: 0;
+    }
+    .preset-label {
+      display: block;
+      color: var(--accent-color);
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .preset-options {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .preset-options label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+    .preset-options input[type="radio"] {
+      width: auto;
+      cursor: pointer;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 15px;
+    }
+    .input-group {
+      flex: 1;
+    }
+    .input-group label {
+      display: block;
+      margin: 0 0 5px 0;
+    }
+    .input-row button {
+      flex-shrink: 0;
+      padding: 5px 15px;
+      font-size: 12px;
+      white-space: nowrap;
+      margin: 0;
+    }
+    #results {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      white-space: pre-wrap;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-container">
+    <h1>Cosmic Tilt Meter</h1>
+    <div class="playback-controls">
+      <button id="playPauseBtn" onclick="togglePlayPause()">⏸ Pause</button>
+    </div>
+  </div>
+
+  <div class="presets">
+    <div class="preset-label">Location Presets:</div>
+    <div class="preset-options">
+      <label>
+        <input type="radio" name="preset" value="current" checked onchange="applyPreset('current')">
+        Current Location
+      </label>
+      <label>
+        <input type="radio" name="preset" value="dublin" onchange="applyPreset('dublin')">
+        Dublin, Ireland
+      </label>
+      <label>
+        <input type="radio" name="preset" value="venice" onchange="applyPreset('venice')">
+        Venice, Florida
+      </label>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="input-row">
+      <div class="input-group">
+        <label>Latitude (decimal degrees):</label>
+        <input type="number" id="lat" step="0.000001" value="" onchange="calculate()">
+      </div>
+      <div class="input-group">
+        <label>Longitude (decimal degrees):</label>
+        <input type="number" id="lon" step="0.000001" value="" onchange="calculate()">
+      </div>
+      <button onclick="useCurrentLocation()">Use Current Location</button>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label>Date & Time:</label>
+        <input type="datetime-local" id="datetime" step="1" onchange="pauseAndCalculate()">
+      </div>
+      <button onclick="useBrowserTime()">Use Browser Time</button>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label>Timezone:</label>
+        <select id="timezone" onchange="onTimezoneChange()">
+          <option value="America/New_York">America/New_York (UTC-5/-4)</option>
+          <option value="America/Chicago">America/Chicago (UTC-6/-5)</option>
+          <option value="America/Denver">America/Denver (UTC-7/-6)</option>
+          <option value="America/Los_Angeles">America/Los_Angeles (UTC-8/-7)</option>
+          <option value="America/Phoenix">America/Phoenix (UTC-7)</option>
+          <option value="America/Anchorage">America/Anchorage (UTC-9/-8)</option>
+          <option value="Pacific/Honolulu">Pacific/Honolulu (UTC-10)</option>
+          <option value="Europe/Dublin">Europe/Dublin (UTC+0/+1)</option>
+          <option value="Europe/London">Europe/London (UTC+0/+1)</option>
+          <option value="Europe/Paris">Europe/Paris (UTC+1/+2)</option>
+          <option value="Europe/Berlin">Europe/Berlin (UTC+1/+2)</option>
+          <option value="Europe/Moscow">Europe/Moscow (UTC+3)</option>
+          <option value="Asia/Dubai">Asia/Dubai (UTC+4)</option>
+          <option value="Asia/Kolkata">Asia/Kolkata (UTC+5:30)</option>
+          <option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</option>
+          <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+          <option value="Asia/Seoul">Asia/Seoul (UTC+9)</option>
+          <option value="Australia/Sydney">Australia/Sydney (UTC+10/+11)</option>
+          <option value="Australia/Melbourne">Australia/Melbourne (UTC+10/+11)</option>
+          <option value="Australia/Perth">Australia/Perth (UTC+8)</option>
+          <option value="Pacific/Auckland">Pacific/Auckland (UTC+12/+13)</option>
+          <option value="UTC">UTC (UTC+0)</option>
+        </select>
+      </div>
+      <button onclick="if(useBrowserTimezone()) calculate()">Use Browser Timezone</button>
+    </div>
+  </div>
+
+  <div id="results">Locating...</div>
+
+  <script type="module">
+    import { calculateAll } from './modules/calculations/CelestialCalculations.js';
+    import { Coordinates } from './modules/astronomy/Coordinates.js';
+
+    // Playback state
+    let isPlaying = true;
+    let updateInterval = null;
+    let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Track which timezone we're simulating
+    let currentUtcMoment = new Date(); // The actual UTC moment we're working with
+
+    // Format a UTC moment for display in the selected timezone
+    function formatTimeInTimezone(utcDate, timezone) {
+      const formatter = new Intl.DateTimeFormat(undefined, {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(utcDate);
+      const year = parts.find(p => p.type === 'year').value;
+      const month = parts.find(p => p.type === 'month').value;
+      const day = parts.find(p => p.type === 'day').value;
+      const hour = parts.find(p => p.type === 'hour').value;
+      const minute = parts.find(p => p.type === 'minute').value;
+      const second = parts.find(p => p.type === 'second').value;
+      return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    }
+
+    // Set initial display
+    document.getElementById('datetime').value = formatTimeInTimezone(currentUtcMoment, currentTimezone);
+
+    window.togglePlayPause = function() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('playPauseBtn');
+      if (isPlaying) {
+        btn.textContent = '⏸ Pause';
+        // Resume with current time
+        updateTime();
+      } else {
+        btn.textContent = '▶ Play';
+      }
+    };
+
+    window.pauseAndCalculate = function() {
+      // When user manually edits datetime, pause playback and parse the new time
+      if (isPlaying) {
+        isPlaying = false;
+        document.getElementById('playPauseBtn').textContent = '▶ Play';
+      }
+
+      // Parse the datetime input as being in the selected timezone
+      const dateStr = document.getElementById('datetime').value;
+      if (dateStr) {
+        // Parse the components
+        const parts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+        if (parts) {
+          const year = parseInt(parts[1]);
+          const month = parseInt(parts[2]);
+          const day = parseInt(parts[3]);
+          const hour = parseInt(parts[4]);
+          const minute = parseInt(parts[5]);
+          const second = parseInt(parts[6]);
+
+          // Create a date string that represents this moment in the selected timezone
+          const localDateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+
+          // Parse this as a local time in the selected timezone
+          // We'll use a trick: create the date in UTC, then offset by the difference
+          const utcTest = new Date(`${localDateStr}Z`); // Parse as UTC
+          const localTest = new Date(utcTest.toLocaleString(undefined, { timeZone: currentTimezone })); // What time is this in the target timezone?
+
+          // The offset is the difference between what we got and what we wanted
+          const offset = utcTest - localTest;
+
+          // Create the correct UTC moment
+          currentUtcMoment = new Date(Date.parse(`${localDateStr}Z`) + offset);
+        }
+      }
+
+      calculate();
+    };
+
+    function updateTime() {
+      if (isPlaying) {
+        // Update to current moment
+        currentUtcMoment = new Date();
+
+        // Display in selected timezone
+        document.getElementById('datetime').value = formatTimeInTimezone(currentUtcMoment, currentTimezone);
+
+        // Calculate using the UTC moment
+        calculate();
+      }
+    }
+
+    // Preset locations
+    const presets = {
+      current: {
+        name: 'Current Location',
+        useGeolocation: true
+      },
+      dublin: {
+        name: 'Dublin, Ireland',
+        lat: 53.3498,
+        lon: -6.2603,
+        timezone: 'Europe/Dublin'
+      },
+      venice: {
+        name: 'Venice, Florida',
+        lat: 27.0998,
+        lon: -82.4543,
+        timezone: 'America/New_York'
+      }
+    };
+
+    window.applyPreset = function(presetKey) {
+      const preset = presets[presetKey];
+
+      if (preset.useGeolocation) {
+        useCurrentLocation();
+      } else {
+        document.getElementById('lat').value = preset.lat;
+        document.getElementById('lon').value = preset.lon;
+
+        // Set timezone if available in dropdown
+        const select = document.getElementById('timezone');
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === preset.timezone) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
+
+        // Update current timezone to the preset's timezone
+        currentTimezone = preset.timezone;
+
+        // Update datetime to current moment in the selected timezone
+        updateTime();
+      }
+    };
+
+    window.useCurrentLocation = function() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+      }
+
+      // Show loading indicator
+      document.getElementById('results').textContent = 'Locating...';
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          document.getElementById('lat').value = position.coords.latitude.toFixed(6);
+          document.getElementById('lon').value = position.coords.longitude.toFixed(6);
+
+          // Set timezone to browser's timezone (silent mode)
+          const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          currentTimezone = browserTimezone;
+          useBrowserTimezone(true);
+
+          updateTime();
+        },
+        (error) => {
+          let message = 'Unable to get location: ';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              message += 'Location permission denied';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              message += 'Location information unavailable';
+              break;
+            case error.TIMEOUT:
+              message += 'Location request timed out';
+              break;
+            default:
+              message += 'Unknown error';
+          }
+          document.getElementById('results').textContent = message;
+          alert(message);
+        }
+      );
+    };
+
+    window.useBrowserTime = function() {
+      // Update to current moment
+      currentUtcMoment = new Date();
+
+      // Update to browser's timezone
+      const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      currentTimezone = browserTimezone;
+
+      // Set the timezone dropdown
+      useBrowserTimezone(true);
+
+      // Display the current moment in the browser's timezone
+      document.getElementById('datetime').value = formatTimeInTimezone(currentUtcMoment, currentTimezone);
+
+      // Resume playback when jumping to current time
+      if (!isPlaying) {
+        isPlaying = true;
+        document.getElementById('playPauseBtn').textContent = '⏸ Pause';
+      }
+
+      calculate();
+    };
+
+    window.useBrowserTimezone = function(silent = false) {
+      const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const select = document.getElementById('timezone');
+
+      // Try to find matching timezone in dropdown
+      let found = false;
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === browserTimezone) {
+          select.selectedIndex = i;
+          currentTimezone = browserTimezone;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found && !silent) {
+        alert(`Browser timezone "${browserTimezone}" not found in dropdown.\nPlease select manually or add it to the list.`);
+      }
+
+      return found;
+    };
+
+    window.onTimezoneChange = function() {
+      // Update current timezone to the selected value
+      currentTimezone = document.getElementById('timezone').value;
+
+      // Re-display the current UTC moment in the new timezone
+      document.getElementById('datetime').value = formatTimeInTimezone(currentUtcMoment, currentTimezone);
+
+      // Recalculate
+      calculate();
+    };
+
+    window.calculate = function() {
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lon = parseFloat(document.getElementById('lon').value);
+      const timezone = document.getElementById('timezone').value;
+
+      if (isNaN(lat) || isNaN(lon)) {
+        // Don't show error, just wait for inputs to be filled
+        return;
+      }
+
+      // Use the UTC moment directly for calculations
+      const results = calculateAll(lat, lon, currentUtcMoment, 8);
+
+      // Format output
+      let output = '';
+      output += 'INPUT\n';
+      output += '=====\n';
+      output += `Latitude:  ${lat}°\n`;
+      output += `Longitude: ${lon}°\n`;
+      output += `Timezone:  ${timezone}\n`;
+      output += `\n`;
+      output += 'TIME\n';
+      output += '----\n';
+      output += `UTC:       ${currentUtcMoment.toISOString()}\n`;
+
+      // Show time in selected timezone
+      try {
+        const localTimeInZone = currentUtcMoment.toLocaleString(undefined, { timeZone: timezone });
+        output += `${timezone}: ${localTimeInZone}\n`;
+      } catch (e) {
+        // Timezone not recognized, skip
+      }
+      output += '\n';
+
+      output += 'CELESTIAL BODIES\n';
+      output += '================\n';
+      const cb = results.celestialBodies;
+
+      // Create table
+      const bodies = [
+        ['Sun', (cb.sun.azimuth * 180 / Math.PI).toFixed(3), (cb.sun.altitude * 180 / Math.PI).toFixed(3)],
+        ['Moon', (cb.moon.azimuth * 180 / Math.PI).toFixed(3), (cb.moon.altitude * 180 / Math.PI).toFixed(3)],
+        ['Galactic Center', cb.galacticCenter.rotations[0].toFixed(3), cb.galacticCenter.rotations[1].toFixed(3)],
+        ['Galactic North Pole', cb.galacticNorthPole.rotations[0].toFixed(3), cb.galacticNorthPole.rotations[1].toFixed(3)]
+      ];
+
+      // Calculate column widths
+      const col1Width = Math.max(...bodies.map(b => b[0].length), 6); // min "Object"
+      const col2Width = Math.max(...bodies.map(b => b[1].length), 11); // min "Azimuth (°)"
+      const col3Width = Math.max(...bodies.map(b => b[2].length), 12); // min "Altitude (°)"
+
+      // Header
+      output += 'Object'.padEnd(col1Width) + '  ' + 'Azimuth (°)'.padStart(col2Width) + '  ' + 'Altitude (°)'.padStart(col3Width) + '\n';
+      output += '-'.repeat(col1Width) + '  ' + '-'.repeat(col2Width) + '  ' + '-'.repeat(col3Width) + '\n';
+
+      // Data rows
+      bodies.forEach(body => {
+        output += body[0].padEnd(col1Width) + '  ' + body[1].padStart(col2Width) + '  ' + body[2].padStart(col3Width) + '\n';
+      });
+      output += '\n';
+
+      output += 'MOTION VECTORS\n';
+      output += '==============\n';
+      results.motionVectors.forEach(motion => {
+        if (!motion.implemented) {
+          output += `Level ${motion.level}: ${motion.name} - Not implemented\n\n`;
+          return;
+        }
+        if (motion.error) {
+          output += `Level ${motion.level}: ${motion.name} - Error: ${motion.error}\n\n`;
+          return;
+        }
+        output += `Level ${motion.level}: ${motion.name}\n`;
+        output += `  Azimuth:  ${motion.direction.azimuthDegrees.toFixed(3)}°\n`;
+        output += `  Altitude: ${motion.direction.altitudeDegrees.toFixed(3)}°\n`;
+        output += `  Speed:    ${motion.velocity.toFixed(2)} km/s\n`;
+        output += `\n`;
+      });
+
+      output += 'VECTOR SUM\n';
+      output += '==========\n';
+      const vs = results.vectorSum.resultant;
+      output += `Azimuth:  ${Coordinates.toDegrees(vs.azimuth).toFixed(3)}°\n`;
+      output += `Altitude: ${Coordinates.toDegrees(vs.altitude).toFixed(3)}°\n`;
+      output += `Speed:    ${vs.magnitude.toFixed(2)} km/s\n`;
+
+      document.getElementById('results').textContent = output;
+    };
+
+    // Apply default preset on page load (will show "Locating..." and get position)
+    applyPreset('current');
+
+    // Auto-update every second - updates time and recalculates when playing
+    updateInterval = setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>
