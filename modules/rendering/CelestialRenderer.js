@@ -1,9 +1,6 @@
-import { GalacticCenter } from '../astronomy/GalacticCenter.js';
 import { Coordinates } from '../astronomy/Coordinates.js';
-import { EarthOrbit } from '../motion/EarthOrbit.js';
-import { EarthRotation } from '../motion/EarthRotation.js';
 import { COSMIC_LEVELS } from '../config/CosmicLevels.js';
-import { VectorSum } from '../math/VectorSum.js';
+import { calculateCelestialPositions, calculateVectorSum as calcVectorSum } from '../calculations/CelestialCalculations.js';
 
 export class CelestialRenderer {
   constructor(sceneManager, uiControls, levelManager = null) {
@@ -113,39 +110,35 @@ export class CelestialRenderer {
     const date = currentTime || new Date();
 
     try {
-      // Calculate celestial positions
-      const sunLoc = SunCalc.getPosition(date, lat, lon);
-      const moonLoc = SunCalc.getMoonPosition(date, lat, lon);
-      const galacticRotations = GalacticCenter.currentMilkyWayPosition(lat, lon, date);
+      // Calculate celestial positions using the calculation layer
+      const celestialData = calculateCelestialPositions(lat, lon, date);
 
       // Log calculations
-      this.logCoordinates("Sun", sunLoc.azimuth + Math.PI, sunLoc.altitude);
-      this.logCoordinates("Moon", moonLoc.azimuth + Math.PI, moonLoc.altitude);
+      this.logCoordinates("Sun", celestialData.sun.azimuth, celestialData.sun.altitude);
+      this.logCoordinates("Moon", celestialData.moon.azimuth, celestialData.moon.altitude);
 
-      // Apply skybox rotations
-      this.sceneManager.applySkyboxRotation(compassCorrection, galacticRotations);
+      // Apply skybox rotations (using galactic center rotations)
+      this.sceneManager.applySkyboxRotation(compassCorrection, celestialData.galacticCenter.rotations);
 
       // Apply compass correction to all containers
       this.sceneManager.applyCompassCorrection(compassCorrection);
 
       // Position celestial bodies
-      // SunCalc uses 0 deg for south, add PI to adjust to north
-      this.sceneManager.positionCelestialBody('sun', sunLoc.azimuth + Math.PI, sunLoc.altitude);
-      this.sceneManager.positionCelestialBody('moon', moonLoc.azimuth + Math.PI, moonLoc.altitude);
+      this.sceneManager.positionCelestialBody('sun', celestialData.sun.azimuth, celestialData.sun.altitude);
+      this.sceneManager.positionCelestialBody('moon', celestialData.moon.azimuth, celestialData.moon.altitude);
 
       // Process motion HUDs based on level configuration
       this.processMotionHUDsBasedOnLevels(lat, lon, date);
 
-
       // Position galactic center
-      this.sceneManager.positionGalacticCenter(galacticRotations);
+      this.sceneManager.positionGalacticCenter(celestialData.galacticCenter.rotations);
 
       this.uiControls?.debugLog("Celestial scene rendered successfully");
-      
+
       return {
-        sun: sunLoc,
-        moon: moonLoc,
-        galactic: galacticRotations
+        sun: celestialData.sun,
+        moon: celestialData.moon,
+        galactic: celestialData.galacticCenter.rotations
       };
 
     } catch (error) {
@@ -183,42 +176,21 @@ export class CelestialRenderer {
   calculateVectorSum(lat, lon, date) {
     if (!this.levelManager) return null;
 
-    const vectorSum = new VectorSum();
-    const activeLevels = this.levelManager.getActiveImplementedLevels();
-    
-    activeLevels.forEach(level => {
-      if (level.motionClass && level.implemented) {
-        try {
-          // Create motion class instance with level configuration
-          const instance = new level.motionClass(level);
-          
-          // Get velocity and direction
-          const velocity = instance.getVelocity(lat, lon);
-          const direction = instance.getDirection(lat, lon, date);
-          
-          // Add to vector sum
-          vectorSum.addVector(
-            level.name,
-            velocity,
-            direction.azimuth,
-            direction.altitude,
-            { level: level.level, id: level.id }
-          );
-        } catch (error) {
-          this.uiControls?.debugLog(`Vector sum error for ${level.name}: ${error.message}`);
-        }
-      }
-    });
+    // Get the max level from level manager
+    const maxLevel = this.levelManager.getMaxLevel();
 
-    const resultant = vectorSum.getResultant();
+    // Use the calculation layer to compute vector sum
+    const vectorSumData = calcVectorSum(lat, lon, date, maxLevel);
+
+    const resultant = vectorSumData.resultant;
     if (resultant) {
       this.uiControls?.debugLog(`Total velocity: ${Math.round(resultant.magnitude)} km/s toward ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
-      
+
       // Update UI display
-      this.updateVectorSumDisplay(vectorSum);
+      this.updateVectorSumDisplay(vectorSumData.vectorSum);
     }
 
-    return vectorSum;
+    return vectorSumData.vectorSum;
   }
 
   // Update the vector sum display in the UI
