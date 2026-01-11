@@ -52,9 +52,9 @@
       background: var(--input-bg);
     }
     label {
-      display: block;
-      margin: 10px 0 5px 0;
       color: var(--accent-color);
+      margin-right: 8px;
+      display: inline-block;
     }
     input, select, button {
       font-family: 'Courier New', monospace;
@@ -84,10 +84,6 @@
       margin-top: 5px;
       font-size: 12px;
     }
-    button.main-button {
-      width: 100%;
-      margin-top: 15px;
-    }
     .playback-controls {
       margin-left: 20px;
     }
@@ -106,15 +102,16 @@
     .presets label {
       color: var(--text-color);
       margin: 0;
+      min-width: auto;
     }
     .preset-label {
-      display: block;
+      display: inline-block;
       color: var(--accent-color);
-      margin-bottom: 10px;
+      margin-right: 15px;
       font-weight: bold;
     }
     .preset-options {
-      display: flex;
+      display: inline-flex;
       gap: 20px;
       flex-wrap: wrap;
     }
@@ -131,15 +128,23 @@
     .input-row {
       display: flex;
       gap: 10px;
-      align-items: flex-end;
-      margin-bottom: 15px;
+      align-items: center;
+      margin-bottom: 10px;
     }
     .input-group {
       flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .input-group label {
-      display: block;
-      margin: 0 0 5px 0;
+      margin: 0;
+      min-width: 50px;
+      flex-shrink: 0;
+    }
+    .input-group input,
+    .input-group select {
+      flex: 1;
     }
     .input-row button {
       flex-shrink: 0;
@@ -157,6 +162,16 @@
       font-size: 12px;
       line-height: 1.6;
     }
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 20px;
+    }
+    .results-section {
+      min-width: 0;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -168,19 +183,19 @@
   </div>
 
   <div class="presets">
-    <div class="preset-label">Location Presets:</div>
+    <span class="preset-label">Location:</span>
     <div class="preset-options">
       <label>
         <input type="radio" name="preset" value="current" checked onchange="applyPreset('current')">
-        Current Location
+        Current
       </label>
       <label>
         <input type="radio" name="preset" value="dublin" onchange="applyPreset('dublin')">
-        Dublin, Ireland
+        Dublin, IE
       </label>
       <label>
         <input type="radio" name="preset" value="venice" onchange="applyPreset('venice')">
-        Venice, Florida
+        Venice, FL
       </label>
     </div>
   </div>
@@ -188,11 +203,11 @@
   <div class="controls">
     <div class="input-row">
       <div class="input-group">
-        <label>Latitude (decimal degrees):</label>
+        <label>Lat:</label>
         <input type="number" id="lat" step="0.000001" value="" onchange="calculate()">
       </div>
       <div class="input-group">
-        <label>Longitude (decimal degrees):</label>
+        <label>Lon:</label>
         <input type="number" id="lon" step="0.000001" value="" onchange="calculate()">
       </div>
       <button onclick="useCurrentLocation()">Use Current Location</button>
@@ -200,7 +215,7 @@
 
     <div class="input-row">
       <div class="input-group">
-        <label>Date & Time:</label>
+        <label>Time:</label>
         <input type="datetime-local" id="datetime" step="1" onchange="pauseAndCalculate()">
       </div>
       <button onclick="useBrowserTime()">Use Browser Time</button>
@@ -208,7 +223,7 @@
 
     <div class="input-row">
       <div class="input-group">
-        <label>Timezone:</label>
+        <label>TZ:</label>
         <select id="timezone" onchange="onTimezoneChange()">
           <option value="America/New_York">America/New_York (UTC-5/-4)</option>
           <option value="America/Chicago">America/Chicago (UTC-6/-5)</option>
@@ -288,6 +303,7 @@
     };
 
     window.pauseAndCalculate = function() {
+      console.log("SMASH");
       // When user manually edits datetime, pause playback and parse the new time
       if (isPlaying) {
         isPlaying = false;
@@ -297,15 +313,15 @@
       // Parse the datetime input as being in the selected timezone
       const dateStr = document.getElementById('datetime').value;
       if (dateStr) {
-        // Parse the components
-        const parts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+        // Parse the components (seconds are optional)
+        const parts = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
         if (parts) {
           const year = parseInt(parts[1]);
           const month = parseInt(parts[2]);
           const day = parseInt(parts[3]);
           const hour = parseInt(parts[4]);
           const minute = parseInt(parts[5]);
-          const second = parseInt(parts[6]);
+          const second = parts[6] ? parseInt(parts[6]) : 0; // Default to 0 if not present
 
           // Create a date string that represents this moment in the selected timezone
           const localDateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
@@ -342,17 +358,17 @@
     // Preset locations
     const presets = {
       current: {
-        name: 'Current Location',
+        name: 'Current',
         useGeolocation: true
       },
       dublin: {
-        name: 'Dublin, Ireland',
+        name: 'Dublin, IE',
         lat: 53.3498,
         lon: -6.2603,
         timezone: 'Europe/Dublin'
       },
       venice: {
-        name: 'Venice, Florida',
+        name: 'Venice, FL',
         lat: 27.0998,
         lon: -82.4543,
         timezone: 'America/New_York'
@@ -496,29 +512,29 @@
       // Use the UTC moment directly for calculations
       const results = calculateAll(lat, lon, currentUtcMoment, 8);
 
-      // Format output
-      let output = '';
-      output += 'INPUT\n';
-      output += '=====\n';
-      output += `Latitude:  ${lat}°\n`;
-      output += `Longitude: ${lon}°\n`;
-      output += `Timezone:  ${timezone}\n`;
-      output += `\n`;
-      output += 'TIME\n';
-      output += '----\n';
-      output += `UTC:       ${currentUtcMoment.toISOString()}\n`;
+      // Format output - using grid layout
+      let inputSection = '';
+      inputSection += 'INPUT\n';
+      inputSection += '=====\n';
+      inputSection += `Latitude:  ${lat}°\n`;
+      inputSection += `Longitude: ${lon}°\n`;
+      inputSection += `Timezone:  ${timezone}\n`;
+      inputSection += `\n`;
+      inputSection += 'TIME\n';
+      inputSection += '----\n';
+      inputSection += `UTC:       ${currentUtcMoment.toISOString()}\n`;
 
       // Show time in selected timezone
       try {
         const localTimeInZone = currentUtcMoment.toLocaleString(undefined, { timeZone: timezone });
-        output += `${timezone}: ${localTimeInZone}\n`;
+        inputSection += `${timezone}: ${localTimeInZone}\n`;
       } catch (e) {
         // Timezone not recognized, skip
       }
-      output += '\n';
 
-      output += 'CELESTIAL BODIES\n';
-      output += '================\n';
+      let celestialSection = '';
+      celestialSection += 'CELESTIAL BODIES\n';
+      celestialSection += '================\n';
       const cb = results.celestialBodies;
 
       // Create table
@@ -535,14 +551,15 @@
       const col3Width = Math.max(...bodies.map(b => b[2].length), 12); // min "Altitude (°)"
 
       // Header
-      output += 'Object'.padEnd(col1Width) + '  ' + 'Azimuth (°)'.padStart(col2Width) + '  ' + 'Altitude (°)'.padStart(col3Width) + '\n';
-      output += '-'.repeat(col1Width) + '  ' + '-'.repeat(col2Width) + '  ' + '-'.repeat(col3Width) + '\n';
+      celestialSection += 'Object'.padEnd(col1Width) + '  ' + 'Azimuth (°)'.padStart(col2Width) + '  ' + 'Altitude (°)'.padStart(col3Width) + '\n';
+      celestialSection += '-'.repeat(col1Width) + '  ' + '-'.repeat(col2Width) + '  ' + '-'.repeat(col3Width) + '\n';
 
       // Data rows
       bodies.forEach(body => {
-        output += body[0].padEnd(col1Width) + '  ' + body[1].padStart(col2Width) + '  ' + body[2].padStart(col3Width) + '\n';
+        celestialSection += body[0].padEnd(col1Width) + '  ' + body[1].padStart(col2Width) + '  ' + body[2].padStart(col3Width) + '\n';
       });
-      output += '\n';
+
+      let output = '<div class="results-grid"><div class="results-section">' + inputSection + '</div><div class="results-section">' + celestialSection + '</div></div>\n';
 
       output += 'MOTION VECTORS\n';
       output += '==============\n';
@@ -569,7 +586,7 @@
       output += `Altitude: ${Coordinates.toDegrees(vs.altitude).toFixed(3)}°\n`;
       output += `Speed:    ${vs.magnitude.toFixed(2)} km/s\n`;
 
-      document.getElementById('results').textContent = output;
+      document.getElementById('results').innerHTML = output;
     };
 
     // Apply default preset on page load (will show "Locating..." and get position)
