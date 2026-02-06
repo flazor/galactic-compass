@@ -11,8 +11,7 @@ export class Coordinates {
     if (date === null) {
       date = new Date();
     }
-    const j2000 = new Date(2000, 0, 1, 12);
-//    const j2000 = new Date(Date.UTC(2000, 0, 1, 12));
+    const j2000 = new Date(Date.UTC(2000, 0, 1, 12));
     const diff = date - j2000;
     return diff / (24 * 60 * 60 * 1000);
   }

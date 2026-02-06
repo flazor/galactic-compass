@@ -24,15 +24,15 @@ suite('Coordinates', () => {
 
     test('daysSinceJ2000 calculates correctly', () => {
         // J2000 epoch: January 1, 2000, 12:00 TT
-        const j2000 = new Date(2000, 0, 1, 12); // Note: month is 0-indexed
+        const j2000 = new Date(Date.UTC(2000, 0, 1, 12)); // J2000 epoch in UTC
         assertEquals(Coordinates.daysSinceJ2000(j2000), 0);
         
         // One day later
-        const nextDay = new Date(2000, 0, 2, 12);
+        const nextDay = new Date(Date.UTC(2000, 0, 2, 12));
         assertEquals(Coordinates.daysSinceJ2000(nextDay), 1);
         
         // One year later (366 days - 2000 was a leap year)
-        const nextYear = new Date(2001, 0, 1, 12);
+        const nextYear = new Date(Date.UTC(2001, 0, 1, 12));
         assertEquals(Coordinates.daysSinceJ2000(nextYear), 366);
     });
 
