@@ -117,6 +117,7 @@ export function calculateMotionVectors(lat, lon, date) {
           altitudeDegrees: Coordinates.toDegrees(direction.altitude)
         },
         implemented: true,
+        isVerification: level.isVerification || false,
         motionClass: level.motionClass.name
       });
     } catch (error) {
@@ -144,9 +145,9 @@ export function calculateVectorSum(lat, lon, date, maxLevel = 8) {
   const vectorSum = new VectorSum();
   const motionVectors = calculateMotionVectors(lat, lon, date);
 
-  // Add vectors up to maxLevel
+  // Add vectors up to maxLevel, excluding verification-only levels (e.g. CMB dipole)
   const activeVectors = motionVectors
-    .filter(vector => vector.level <= maxLevel && vector.implemented && !vector.error);
+    .filter(vector => vector.level <= maxLevel && vector.implemented && !vector.error && !vector.isVerification);
 
   activeVectors.forEach(vector => {
     vectorSum.addVector(

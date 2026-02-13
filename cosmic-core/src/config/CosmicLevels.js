@@ -145,47 +145,86 @@ export const COSMIC_LEVELS = [
   {
     level: 4,
     id: 'localGroupMotion',
-    name: 'Local Group Motion',
-    description: 'Milky Way + Andromeda + ~50 galaxies falling toward each other',
+    name: 'Milky Way in Local Group',
+    description: 'Milky Way falls toward Local Group barycenter (on MW-Andromeda axis)',
 
     // Physics
-    velocity: 110, // km/s
-    velocityDescription: '~110 km/s (Andromeda approach)',
-    direction: 'Toward M31 (Andromeda Galaxy)',
-    period: '~4.5 billion years until collision',
+    velocity: 62, // km/s (Makarov et al. 2025)
+    velocityDescription: '~63 km/s',
+    direction: 'Toward Local Group barycenter (near M31)',
+    period: '~4.5 billion years until MW-M31 collision',
 
     // Scale
     scale: 10000000, // light-years (10 million ly)
     scaleDescription: 'Local Group diameter = ~10 million light-years',
 
-    // Coordinates (RA/Dec) - Andromeda Galaxy (M31)
+    // Coordinates (RA/Dec) - LG barycenter lies on MW-M31 axis
+    // Galactic: l = 121.7, b = -21.5 (Makarov et al. 2025)
     coordinates: {
       type: 'radec',
-      ra: 0.74, // 00h 44m 10.2s (precise Andromeda position)
-      dec: 41.4, // +41° 24' 55.5" (precise Andromeda position)
-      description: 'RA: 00h 44m, Dec: +41° 25\' (M31 Andromeda Galaxy, 2.5 million ly distant)'
+      ra: 0.756, // 00h 45m (toward LG barycenter, near M31)
+      dec: 41.36, // +41.4°
+      galactic: 'l = 121.7°, b = -21.5°',
+      description: 'RA: 00h 45m, Dec: +41° (LG barycenter, near M31)'
     },
 
     // Implementation
     implemented: true,
-    motionClass: CosmicMotion, // Generic motion class for simple constant velocity + RA/Dec
-    bodyId: 'localGroupMerger',
-    elementId: 'local-group-merger-hud-text',
+    motionClass: CosmicMotion,
+    bodyId: 'localGroupMotion',
+    elementId: 'local-group-motion-hud-text',
 
     // Historical
     discoverer: 'Vesto Slipher (1912) - detected Andromeda\'s blueshift',
-    references: 'Slipher (1912); van der Marel et al. (2012), ApJ; Sawala et al. (2024), MNRAS'
+    references: 'Makarov et al. (2025), A&A; van der Marel et al. (2012), ApJ'
   },
 
   {
     level: 5,
-    id: 'virgoClusterInfall',
-    name: 'Virgo Cluster Infall',
-    description: 'Local Group falling toward Virgo Cluster center',
+    id: 'localVoidPush',
+    name: 'Local Void Push',
+    description: 'Local Sheet of galaxies repelled away from the underdense Local Void',
 
-    // Physics
-    velocity: 300, // km/s
-    velocityDescription: '~300 km/s',
+    // Physics (Tully et al. 2008 decomposition)
+    velocity: 259, // km/s
+    velocityDescription: '~259 km/s',
+    direction: 'Away from Local Void center',
+    period: 'N/A (ongoing repulsion)',
+
+    // Scale
+    scale: 100000000, // light-years (~100 million ly void diameter)
+    scaleDescription: 'Local Void diameter = ~100 million light-years',
+
+    // Coordinates (RA/Dec) - direction AWAY from Local Void
+    // Galactic: l = 210, b = -2 (Tully et al. 2008)
+    coordinates: {
+      type: 'radec',
+      ra: 6.649, // 06h 39m
+      dec: 1.70, // +1.7°
+      galactic: 'l = 210°, b = -2°',
+      description: 'RA: 06h 39m, Dec: +2° (away from Local Void, toward Monoceros/Orion)'
+    },
+
+    // Implementation
+    implemented: true,
+    motionClass: CosmicMotion,
+    bodyId: 'localVoidPush',
+    elementId: 'local-void-push-hud-text',
+
+    // Historical
+    discoverer: 'Brent Tully et al. (2008) - identified void repulsion as major component',
+    references: 'Tully et al. (2008), ApJ, 676, 184'
+  },
+
+  {
+    level: 6,
+    id: 'virgoPull',
+    name: 'Virgo Cluster Pull',
+    description: 'Local Group pulled toward Virgo Cluster (Tully 2008 component)',
+
+    // Physics (Tully et al. 2008 decomposition)
+    velocity: 185, // km/s
+    velocityDescription: '~185 km/s',
     direction: 'Toward M87 (Virgo Cluster center)',
     period: 'N/A (ongoing infall)',
 
@@ -193,106 +232,78 @@ export const COSMIC_LEVELS = [
     scale: 110000000, // light-years (110 million ly)
     scaleDescription: 'Virgo Supercluster diameter = ~110 million light-years',
 
-    // Coordinates (RA/Dec)
+    // Coordinates (RA/Dec) - M87 / Virgo Cluster center
+    // Galactic: l = 283.8, b = +74.5
     coordinates: {
       type: 'radec',
-      ra: parseRA('12h 27m'), // 12.45 hours
-      dec: parseDec('+12°'), // +12 degrees
-      description: 'RA: 12h 27m, Dec: +12° (53 million ly distant, Near: Spica, Virgo A)'
+      ra: 12.514, // 12h 31m (M87)
+      dec: 12.39, // +12.4°
+      galactic: 'l = 283.8°, b = +74.5°',
+      description: 'RA: 12h 31m, Dec: +12° (M87, Virgo Cluster center, 53 Mly distant)'
     },
 
     // Implementation
     implemented: true,
-    motionClass: CosmicMotion, // Generic motion class
-    bodyId: 'virgoClusterInfall',
-    elementId: 'virgo-cluster-infall-hud-text',
+    motionClass: CosmicMotion,
+    bodyId: 'virgoPull',
+    elementId: 'virgo-pull-hud-text',
 
     // Historical
-    discoverer: 'Marc Aaronson et al. (1980-1982), Allan Sandage & Gustav Tammann (1985)',
-    references: 'Aaronson et al. (1982), ApJ, 258, 64; Tammann & Sandage (1985), ApJ, 294'
-  },
-
-  {
-    level: 6,
-    id: 'greatAttractor',
-    name: 'Great Attractor',
-    description: 'Massive gravity anomaly pulling Virgo Supercluster',
-
-    // Physics
-    velocity: 600, // km/s
-    velocityDescription: '~600 km/s',
-    direction: 'Toward Norma Cluster (ACO 3627)',
-    period: 'N/A (ongoing attraction)',
-
-    // Scale
-    scale: 400000000, // light-years (300-500 million ly span)
-    scaleDescription: 'Structure spans ~300-500 million light-years (center at ~150-250 million ly)',
-
-    // Coordinates (RA/Dec) - Norma Cluster (ACO 3627)
-    coordinates: {
-      type: 'radec',
-      ra: 16.27, // 16h 16m 35.8s (Norma Cluster center)
-      dec: -60.92, // -60° 55' 56.7" (Norma Cluster center)
-      description: 'RA: 16h 16m, Dec: -60° 56\' (Norma Cluster/ACO 3627, Great Attractor center)'
-    },
-
-    // Implementation
-    implemented: true,
-    motionClass: CosmicMotion, // Use generic motion class
-    bodyId: 'greatAttractorPull',
-    elementId: 'great-attractor-pull-hud-text',
-
-    // Historical
-    discoverer: 'Alan Dressler (1987)',
-    references: 'Dressler, A. (1987), ApJ; Lynden-Bell et al. (1988), ApJ, 326, 19; Woudt et al. (2007), MNRAS, 383, 445'
+    discoverer: 'Marc Aaronson et al. (1982); Tully et al. (2008) quantified component',
+    references: 'Tully et al. (2008), ApJ, 676, 184; Aaronson et al. (1982), ApJ, 258, 64'
   },
 
   {
     level: 7,
-    id: 'shapleySuperercluster',
-    name: 'Shapley Supercluster Pull',
-    description: 'Even larger structure beyond Great Attractor',
+    id: 'largeScaleFlow',
+    name: 'Large-Scale Flow',
+    description: 'Combined pull from Great Attractor, Shapley, and Centaurus structures',
 
-    // Physics
-    velocity: 85, // km/s additional
-    velocityDescription: '~85 km/s additional',
-    direction: 'Toward Shapley Concentration (A3558 core)',
-    period: 'N/A (ongoing attraction)',
+    // Physics (Tully et al. 2008 decomposition)
+    velocity: 455, // km/s
+    velocityDescription: '~455 km/s',
+    direction: 'Toward Centaurus/Great Attractor/Shapley region',
+    period: 'N/A (ongoing flow)',
 
     // Scale
-    scale: 350000000, // light-years (300-400 million ly span)
-    scaleDescription: 'Supercluster spans ~300-400 million light-years (center at 650 million ly)',
+    scale: 650000000, // light-years (Shapley at ~650 Mly)
+    scaleDescription: 'Flow extends to Shapley Concentration at ~650 million light-years',
 
-    // Coordinates (RA/Dec)
+    // Coordinates (RA/Dec) - combined flow direction
+    // Galactic: l = 299, b = +15 (Tully et al. 2008)
     coordinates: {
       type: 'radec',
-      ra: parseRA('13h 25m'), // 13.42 hours
-      dec: parseDec('-31°'), // -31 degrees
-      description: 'RA: 13h 25m, Dec: -31°'
+      ra: 12.481, // 12h 29m
+      dec: -47.70, // -47.7°
+      galactic: 'l = 299°, b = +15°',
+      description: 'RA: 12h 29m, Dec: -48° (toward Centaurus, includes GA + Shapley)'
     },
 
     // Implementation
     implemented: true,
-    motionClass: CosmicMotion, // Generic motion class
-    bodyId: 'shapleySupererclusterPull',
-    elementId: 'shapley-supercluster-pull-hud-text',
+    motionClass: CosmicMotion,
+    bodyId: 'largeScaleFlow',
+    elementId: 'large-scale-flow-hud-text',
 
     // Historical
-    discoverer: 'Harlow Shapley (1930)',
-    references: 'Shapley, H. (1930); Raychaudhury, S. (1989), ApJ, 347, 17; Proust et al. (2006), A&A, 447, 133'
+    discoverer: 'Tully et al. (2008) - decomposed bulk flow; Dressler (1987) - Great Attractor',
+    references: 'Tully et al. (2008), ApJ, 676, 184; Dressler (1987), ApJ; Tully et al. (2014), Nature, 513, 71'
   },
 
   {
     level: 8,
     id: 'cmbDipole',
     name: 'CMB Dipole / Cosmic Rest Frame',
-    description: 'Net motion relative to Cosmic Microwave Background - our ultimate reference frame',
+    description: 'Measured total motion relative to CMB — verification of vector sum, not an additive component',
 
     // Physics
-    velocity: 369.82, // km/s net
-    velocityDescription: '~370 km/s net',
+    velocity: 369.82, // km/s net (Planck measurement)
+    velocityDescription: '~370 km/s (measured total)',
     direction: 'Toward Leo/Crater boundary',
     period: 'N/A (cosmic reference frame)',
+
+    // This level is NOT added to the vector sum — it IS the expected result
+    isVerification: true,
 
     // Scale
     scale: 93000000000, // light-years (observable universe diameter)
@@ -309,13 +320,13 @@ export const COSMIC_LEVELS = [
 
     // Implementation
     implemented: true,
-    motionClass: CosmicMotion, // Generic motion class
+    motionClass: CosmicMotion,
     bodyId: 'cmbDipoleMotion',
     elementId: 'cmb-dipole-motion-hud-text',
 
     // Historical
     discoverer: 'Edward Conklin (1969) - first detection; Paul Henry (1971) - declination; Brian Corey & David Wilkinson (1976) - confirmation',
-    references: 'Conklin (1969), Nature, 222, 971; Henry (1971), Nature, 231, 516; Kogut et al. (1993), ApJ, 419, 1'
+    references: 'Conklin (1969), Nature, 222, 971; Henry (1971), Nature, 231, 516; Kogut et al. (1993), ApJ, 419, 1; Planck (2020)'
   }
 ];
 

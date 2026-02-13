@@ -81,6 +81,25 @@ describe('calculateVectorSum', () => {
       throw new Error(`Expected sum(3 levels)=${sum3} > sum(1 level)=${sum1}`);
     }
   });
+
+  it('level 8 (CMB dipole) is excluded from vector sum as verification', () => {
+    const { activeVectors } = calculateVectorSum(LAT, LON, DATE, 8);
+    const hasCmb = activeVectors.some(v => v.id === 'cmbDipole');
+    if (hasCmb) {
+      throw new Error('CMB dipole should be excluded from vector sum (isVerification=true)');
+    }
+    // Should have 7 active vectors (levels 1-7), not 8
+    strictEqual(activeVectors.length, 7);
+  });
+
+  it('full vector sum (levels 1-7) is in the right ballpark for CMB dipole', () => {
+    const { resultant } = calculateVectorSum(LAT, LON, DATE, 8);
+    // Tully decomposition should yield a resultant roughly in the range of the CMB dipole (~370 km/s)
+    // Using wide tolerance since directions vary with observer position/time
+    if (resultant.magnitude < 100 || resultant.magnitude > 900) {
+      throw new Error(`Vector sum ${resultant.magnitude} km/s is outside reasonable range (100-900)`);
+    }
+  });
 });
 
 describe('calculateAll', () => {
