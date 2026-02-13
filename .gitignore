@@ -45,6 +45,9 @@ pids
 # Dependencies
 node_modules/
 
+# Personal notes
+REFERENCE.txt
+
 # Build outputs (if we add build tools later)
 dist/
 build/
