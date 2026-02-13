@@ -4,9 +4,9 @@ import { SceneManager } from './modules/rendering/SceneManager.js';
 import { UIControls } from './modules/rendering/UIControls.js';
 import { CelestialRenderer } from './modules/rendering/CelestialRenderer.js';
 import { AssetManager } from './modules/assets/AssetManager.js';
-import { Coordinates } from './modules/astronomy/Coordinates.js';
-import { VERSION } from './modules/config/version.js';
-import { LevelManager } from './modules/config/LevelManager.js';
+import { Coordinates } from './cosmic-core/src/astronomy/Coordinates.js';
+import { VERSION } from './cosmic-core/src/version.js';
+import { LevelManager } from './cosmic-core/src/config/LevelManager.js';
 
 // Global instances
 const deviceOrientation = new DeviceOrientation();

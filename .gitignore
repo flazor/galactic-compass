@@ -42,6 +42,9 @@ pids
 # dotenv environment variables file
 .env
 
+# Dependencies
+node_modules/
+
 # Build outputs (if we add build tools later)
 dist/
 build/

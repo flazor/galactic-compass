@@ -2,7 +2,7 @@ import { StellarCalculations } from '../astronomy/StellarCalculations.js';
 
 /**
  * Generic motion class for simple cosmic motions with constant velocity
- * and fixed RA/Dec coordinates. Used for motions like Solar Orbit, 
+ * and fixed RA/Dec coordinates. Used for motions like Solar Orbit,
  * Virgo Cluster Infall, etc. that don't require complex calculations.
  */
 export class CosmicMotion {
@@ -33,7 +33,7 @@ export class CosmicMotion {
     // calculateStarLocation returns [altitude, azimuth] in degrees
     const location = StellarCalculations.calculateStarLocation(
       latitude,
-      longitude, 
+      longitude,
       this.config.coordinates.ra, // RA in hours
       this.config.coordinates.dec, // Dec in degrees
       date
@@ -42,7 +42,7 @@ export class CosmicMotion {
     // Convert to radians for consistency with other motion classes
     return {
       azimuth: location[1] * Math.PI / 180, // azimuth in radians
-      altitude: location[0] * Math.PI / 180, // altitude in radians  
+      altitude: location[0] * Math.PI / 180, // altitude in radians
       description: this.config.direction
     };
   }

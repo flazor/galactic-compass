@@ -2,18 +2,18 @@ import { Coordinates } from '../astronomy/Coordinates.js';
 
 /**
  * VectorSum - Mathematical class for 3D velocity vector addition
- * 
+ *
  * Handles combining cosmic motion vectors in 3D space to calculate
  * Earth's total velocity and direction through space.
- * 
+ *
  * Coordinate Systems:
  * - Spherical: (magnitude, azimuth, altitude) in local horizon frame
  * - Cartesian: (x, y, z) in standardized 3D space
- * 
+ *
  * Reference Frame Considerations:
  * - All vectors are in the observer's local horizon coordinate system
- * - Azimuth: 0° = North, 90° = East, 180° = South, 270° = West
- * - Altitude: 0° = horizon, +90° = zenith, -90° = nadir
+ * - Azimuth: 0 = North, 90 = East, 180 = South, 270 = West
+ * - Altitude: 0 = horizon, +90 = zenith, -90 = nadir
  * - Motion vectors are measured relative to the Cosmic Microwave Background (CMB) rest frame
  * - CMB frame is the standard universal reference for cosmic motion (369.82 km/s toward Crater/Leo)
  * - This provides the most scientifically accurate representation of Earth's total motion through space
@@ -35,7 +35,7 @@ export class VectorSum {
   addVector(name, magnitude, azimuth, altitude, metadata = {}) {
     // Convert spherical to Cartesian coordinates
     const cartesian = this.sphericalToCartesian(magnitude, azimuth, altitude);
-    
+
     const vector = {
       name,
       magnitude,
@@ -44,7 +44,7 @@ export class VectorSum {
       cartesian,
       metadata
     };
-    
+
     this.vectors.push(vector);
     this.calculateResultant();
   }
@@ -59,19 +59,19 @@ export class VectorSum {
   sphericalToCartesian(magnitude, azimuth, altitude) {
     // Standard spherical to Cartesian conversion
     // x: East-West (positive = East)
-    // y: North-South (positive = North) 
+    // y: North-South (positive = North)
     // z: Up-Down (positive = Up)
     const x = magnitude * Math.cos(altitude) * Math.sin(azimuth);
     const y = magnitude * Math.cos(altitude) * Math.cos(azimuth);
     const z = magnitude * Math.sin(altitude);
-    
+
     return { x, y, z };
   }
 
   /**
    * Convert Cartesian coordinates to spherical
    * @param {number} x - East-West component
-   * @param {number} y - North-South component  
+   * @param {number} y - North-South component
    * @param {number} z - Up-Down component
    * @returns {Object} {magnitude, azimuth, altitude}
    */
@@ -79,7 +79,7 @@ export class VectorSum {
     const magnitude = Math.sqrt(x*x + y*y + z*z);
     const azimuth = Math.atan2(x, y); // atan2(East, North)
     const altitude = Math.asin(z / magnitude);
-    
+
     return { magnitude, azimuth, altitude };
   }
 
@@ -94,7 +94,7 @@ export class VectorSum {
 
     // Sum all Cartesian components
     let sumX = 0, sumY = 0, sumZ = 0;
-    
+
     this.vectors.forEach(vector => {
       sumX += vector.cartesian.x;
       sumY += vector.cartesian.y;
@@ -103,7 +103,7 @@ export class VectorSum {
 
     // Convert back to spherical coordinates
     const spherical = this.cartesianToSpherical(sumX, sumY, sumZ);
-    
+
     this.resultant = {
       cartesian: { x: sumX, y: sumY, z: sumZ },
       magnitude: spherical.magnitude,

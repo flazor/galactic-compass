@@ -7,14 +7,14 @@ import { COSMIC_LEVELS, getLevelsUpTo, getCosmicLevelByNumber } from './CosmicLe
 export class LevelManager {
   constructor(uiControls) {
     this.uiControls = uiControls;
-    
+
     // Default state: show up to level 8 (all cosmic motion levels implemented)
     this.maxLevel = 8;
     this.isUIVisible = false;
-    
+
     // Event listeners for level changes
     this.listeners = new Set();
-    
+
     this.uiControls?.debugLog('LevelManager initialized with max level: ' + this.maxLevel);
   }
 
@@ -31,13 +31,13 @@ export class LevelManager {
    */
   setMaxLevel(level) {
     const newLevel = Math.max(1, Math.min(8, level));
-    
+
     if (newLevel !== this.maxLevel) {
       const oldLevel = this.maxLevel;
       this.maxLevel = newLevel;
-      
+
       this.uiControls?.debugLog(`Level changed: ${oldLevel} → ${newLevel}`);
-      
+
       // Notify all listeners
       this.notifyLevelChange(oldLevel, newLevel);
     }
@@ -77,10 +77,10 @@ export class LevelManager {
   toggleUI() {
     this.isUIVisible = !this.isUIVisible;
     this.uiControls?.debugLog(`Cosmic levels UI: ${this.isUIVisible ? 'visible' : 'hidden'}`);
-    
+
     // Notify UI listeners
     this.notifyUIToggle(this.isUIVisible);
-    
+
     return this.isUIVisible;
   }
 
@@ -152,7 +152,7 @@ export class LevelManager {
     const activeLevels = this.getActiveLevels();
     const implementedCount = activeLevels.filter(l => l.implemented).length;
     const totalCount = activeLevels.length;
-    
+
     return {
       maxLevel: this.maxLevel,
       totalLevels: totalCount,
@@ -169,7 +169,7 @@ export class LevelManager {
   getDebugSummary() {
     const state = this.getStateDescription();
     const activeLevels = this.getActiveLevels();
-    
+
     return {
       ...state,
       activeLevels: activeLevels.map(level => ({

@@ -1,6 +1,6 @@
-import { Coordinates } from '../astronomy/Coordinates.js';
-import { COSMIC_LEVELS } from '../config/CosmicLevels.js';
-import { calculateCelestialPositions, calculateVectorSum as calcVectorSum } from '../calculations/CelestialCalculations.js';
+import { Coordinates } from '../../cosmic-core/src/astronomy/Coordinates.js';
+import { COSMIC_LEVELS } from '../../cosmic-core/src/config/CosmicLevels.js';
+import { calculateCelestialPositions, calculateVectorSum as calcVectorSum } from '../../cosmic-core/src/calculations/CelestialCalculations.js';
 
 export class CelestialRenderer {
   constructor(sceneManager, uiControls, levelManager = null) {

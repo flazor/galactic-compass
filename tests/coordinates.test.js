@@ -1,4 +1,4 @@
-import { Coordinates } from '../modules/astronomy/Coordinates.js';
+import { Coordinates } from '../cosmic-core/src/astronomy/Coordinates.js';
 
 // Wait for testRunner to be available
 if (!window.testRunner) {

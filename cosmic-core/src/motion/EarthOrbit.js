@@ -25,11 +25,11 @@ export class EarthOrbit {
    * IMPORTANT PHYSICAL NOTES:
    * - First-order geometric approximation of Earth's orbital velocity direction.
    * - Assumes circular orbit in the ecliptic plane.
-   * - Velocity vector is approximated as 90° ahead of the Sun's true ecliptic longitude.
-   * - True elliptical orbit deviates by up to ~1° seasonally.
+   * - Velocity vector is approximated as 90 ahead of the Sun's true ecliptic longitude.
+   * - True elliptical orbit deviates by up to ~1 seasonally.
    *
    * RETURNS:
-   * - azimuth / altitude in observer’s LOCAL HORIZON FRAME
+   * - azimuth / altitude in observer's LOCAL HORIZON FRAME
    * - Suitable for visualization / HUDs
    * - Not for high-precision astrometry
    *
@@ -52,7 +52,7 @@ export class EarthOrbit {
     // Sun's true ecliptic longitude
     const lambda = L + Coordinates.toRadians(1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
 
-    // Apex: tangent to orbit, 90° ahead of Sun
+    // Apex: tangent to orbit, 90 ahead of Sun
     let lambdaApex = (lambda + Math.PI / 2) % (2 * Math.PI);
 
     // Convert to equatorial coordinates (RA/Dec)
@@ -60,15 +60,15 @@ export class EarthOrbit {
 
     const latRad = Coordinates.toRadians(latitude);
 
-    // Local Sidereal Time (LST) — fractional day included in 'd', no UT added
+    // Local Sidereal Time (LST) -- fractional day included in 'd', no UT added
     const lstDeg = Coordinates.localSiderealTime(d, longitude);
     const lstRad = Coordinates.toRadians(lstDeg);
 
-    // Hour angle, normalized to [-π, π]
+    // Hour angle, normalized to [-pi, pi]
     let ha = lstRad - ra;
     ha = ((ha + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-    // Equatorial → horizontal coordinates
+    // Equatorial -> horizontal coordinates
     const horizontal = Coordinates.equatorialToHorizontal(ha, dec, latRad);
 
     return {

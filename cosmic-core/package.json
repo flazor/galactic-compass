@@ -1,0 +1,16 @@
+{
+  "name": "cosmic-core",
+  "version": "0.1.0",
+  "description": "Pure calculation library for cosmic motion vectors and celestial positioning",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "suncalc": "^1.9.0"
+  }
+}

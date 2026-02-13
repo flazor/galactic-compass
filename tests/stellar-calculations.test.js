@@ -1,5 +1,5 @@
-import { StellarCalculations } from '../modules/astronomy/StellarCalculations.js';
-import { Coordinates } from '../modules/astronomy/Coordinates.js';
+import { StellarCalculations } from '../cosmic-core/src/astronomy/StellarCalculations.js';
+import { Coordinates } from '../cosmic-core/src/astronomy/Coordinates.js';
 
 // Wait for testRunner to be available
 if (!window.testRunner) {

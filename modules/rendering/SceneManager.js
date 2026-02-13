@@ -1,4 +1,4 @@
-import { Coordinates } from '../astronomy/Coordinates.js';
+import { Coordinates } from '../../cosmic-core/src/astronomy/Coordinates.js';
 
 export class SceneManager {
   constructor() {
