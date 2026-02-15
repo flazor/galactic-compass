@@ -6,12 +6,7 @@
     <script src="script.js" type="module" defer></script>
   </head>
 
-  <body onload="loadBG();">
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-      }
-    </script>
+  <body>
     <button id="reloadButton" style="position: fixed; top: 10px; left: 10px;">&#x21bb;</button>
     <button id="hiResButton" style="position: fixed; top: 10px; right: 60px;">
       Hi-Res
@@ -54,7 +49,7 @@
     <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.5); color: #00FF00; padding: 10px; border-radius: 8px; font-size: 12px; width: 90vw; max-height: 18px; overflow-y: auto; z-index: 9999; font-family: monospace; cursor: pointer; transition: max-height 0.3s ease;" onclick="toggleDebugExpansion()">
       Debug info will appear here... (click to expand)
     </div>
-    <a-scene vr-mode-ui="enabled: false" button>
+    <a-scene vr-mode-ui="enabled: false">
       <a-entity light="type: ambient; color: #BBB"></a-entity>
       <a-camera id="camera" look-controls="touchEnabled: false" position="0 0 0"></a-camera>
       <a-sky id="a-sky" src="https://s3.eu-west-1.amazonaws.com/rideyourbike.org/compass/starmap_2020_1k_gal.jpg"></a-sky>

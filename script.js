@@ -24,21 +24,20 @@ navigator.serviceWorker?.addEventListener('message', (event) => {
   }
 });
 
-// Make functions available globally for HTML onload and A-Frame components
-window.loadBG = loadBG;
+// Make functions available globally for HTML
 window.toRadians = Coordinates.toRadians;
 window.toDegrees = Coordinates.toDegrees;
 window.toggleDebugExpansion = () => uiControls.toggleDebugExpansion();
 window.loadHighResImage = loadHighResImage;
 window.levelManager = levelManager; // For testing and development
 
-// A-Frame component registration
-AFRAME.registerComponent('button', {
-  init() {
-    uiControls.initialize();
-    uiControls.setupHiResButton(loadHighResImage);
-  }
-});
+// Wait for A-Frame scene to be fully initialized before starting
+const scene = document.querySelector('a-scene');
+if (scene.hasLoaded) {
+  loadBG();
+} else {
+  scene.addEventListener('loaded', loadBG);
+}
 
 // Asset caching is now handled by AssetManager
 
@@ -83,7 +82,8 @@ function loadBG() {
   try {
     sceneManager.initialize();
     uiControls.initialize();
-    
+    uiControls.setupHiResButton(loadHighResImage);
+
     // Connect UI controls to level manager
     uiControls.connectLevelManager(levelManager);
     
