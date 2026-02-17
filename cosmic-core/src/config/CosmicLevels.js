@@ -1,7 +1,7 @@
 /**
  * Cosmic Levels Configuration
  *
- * Defines the 8 levels of Earth's motion through space, from local rotation
+ * Defines the 8 levels of an observer's motion through space, from local rotation
  * to motion relative to the Cosmic Microwave Background.
  *
  * Based on COSMIC_LEVELS.md with peer-reviewed astronomical data.

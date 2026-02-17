@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-Tilt Meter is a WebVR/AR application that visualizes how we're flying through space at multiple scales. It shows Earth's motion vectors across 8 cosmic levels (rotation through CMB dipole) while maintaining accurate celestial reference points. Uses A-Frame for 3D rendering and device sensors for real-time positioning.
+Tilt Meter is a WebVR/AR application that visualizes how you're flying through space at multiple scales. It shows motion vectors for an observer on Earth's surface across 8 cosmic levels (rotation through CMB dipole) while maintaining accurate celestial reference points. Uses A-Frame for 3D rendering and device sensors for real-time positioning.
 
 ## Architecture
 

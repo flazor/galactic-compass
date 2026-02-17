@@ -98,7 +98,7 @@ function loadBG() {
         if (vectorSum) {
           const resultant = vectorSum.getResultant();
           if (resultant) {
-            uiControls.debugLog(`Level ${newLevel}: Total velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az  ${Math.round(resultant.altitudeDegrees)}° alt`);
+            uiControls.debugLog(`Level ${newLevel}: Your velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az  ${Math.round(resultant.altitudeDegrees)}° alt`);
           }
         }
       }
@@ -145,7 +145,7 @@ async function handleDeviceReady(heading) {
     if (vectorSum) {
       const resultant = vectorSum.getResultant();
       if (resultant) {
-        uiControls.debugLog(`Initial: Total velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
+        uiControls.debugLog(`Initial: Your velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
       }
     }
   } catch (error) {

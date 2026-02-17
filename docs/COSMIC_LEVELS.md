@@ -1,4 +1,4 @@
-Frames of Reference for Earth's Motion
+Frames of Reference for an Observer on Earth
 
 1. Earth Rotation (~465 m/s at equator)
 

@@ -184,7 +184,7 @@ export class CelestialRenderer {
 
     const resultant = vectorSumData.resultant;
     if (resultant) {
-      this.uiControls?.debugLog(`Total velocity: ${Math.round(resultant.magnitude)} km/s toward ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
+      this.uiControls?.debugLog(`Your velocity: ${Math.round(resultant.magnitude)} km/s toward ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
 
       // Update UI display
       this.updateVectorSumDisplay(vectorSumData.vectorSum);
