@@ -3,10 +3,11 @@ import { COSMIC_LEVELS } from '../../cosmic-core/src/config/CosmicLevels.js';
 import { calculateCelestialPositions, calculateVectorSum as calcVectorSum } from '../../cosmic-core/src/calculations/CelestialCalculations.js';
 
 export class CelestialRenderer {
-  constructor(sceneManager, uiControls, levelManager = null) {
+  constructor(sceneManager, uiControls, levelManager = null, vizModeManager = null) {
     this.sceneManager = sceneManager;
     this.uiControls = uiControls;
     this.levelManager = levelManager;
+    this.vizModeManager = vizModeManager;
   }
 
   logCoordinates(objectOrName, azimuth, altitude) {
@@ -59,9 +60,17 @@ export class CelestialRenderer {
   }
 
   processMotionHUDsBasedOnLevels(lat, lon, date) {
-    // Use level manager to determine which HUDs to show
+    // Delegate to visualization mode manager if available
+    if (this.vizModeManager && this.vizModeManager.getActiveMode()) {
+      const activeLevels = this.levelManager
+        ? this.levelManager.getActiveImplementedLevels()
+        : COSMIC_LEVELS.filter(level => level.implemented);
+      this.vizModeManager.render(activeLevels, lat, lon, date);
+      return;
+    }
+
+    // Legacy fallback: direct rendering (no viz mode manager)
     if (!this.levelManager) {
-      // Fallback: process all implemented motion HUDs using COSMIC_LEVELS data
       const implementedLevels = COSMIC_LEVELS.filter(level => level.implemented);
       implementedLevels.forEach(level => {
         if (level.motionClass) {
@@ -77,26 +86,19 @@ export class CelestialRenderer {
       return;
     }
 
-    // Hide all motion containers first
     this.sceneManager.hideAllMotionContainers();
-
-    // Get active implemented levels from level manager
     const activeLevels = this.levelManager.getActiveImplementedLevels();
-    
+
     this.uiControls?.debugLog(`Processing ${activeLevels.length} active motion HUDs (max level: ${this.levelManager.getMaxLevel()})`);
 
-    // Process and show each active level
     activeLevels.forEach(level => {
       if (level.motionClass && level.implemented) {
-        // Show the container
         this.sceneManager.setMotionContainerVisibility(level.bodyId, true);
-        
-        // Process the motion HUD with level configuration
         this.processMotionHUDWithConfig(
-          level.motionClass, 
-          level, // Pass the full level config
-          level.bodyId, 
-          level.elementId, 
+          level.motionClass,
+          level,
+          level.bodyId,
+          level.elementId,
           lat, lon, date
         );
       }
@@ -157,18 +159,23 @@ export class CelestialRenderer {
   // Update motion container visibility based on current level settings
   updateMotionContainerVisibility() {
     if (!this.levelManager) return;
-    
-    // Hide all motion containers first
+
+    // Delegate to viz mode manager if available
+    if (this.vizModeManager && this.vizModeManager.getActiveMode()) {
+      const activeLevels = this.levelManager.getActiveImplementedLevels();
+      this.vizModeManager.onLevelChange(activeLevels);
+      return;
+    }
+
+    // Legacy fallback
     this.sceneManager.hideAllMotionContainers();
-    
-    // Show containers for active levels
     const activeLevels = this.levelManager.getActiveImplementedLevels();
     activeLevels.forEach(level => {
       if (level.implemented) {
         this.sceneManager.setMotionContainerVisibility(level.bodyId, true);
       }
     });
-    
+
     this.uiControls?.debugLog(`Updated visibility: showing ${activeLevels.length} motion containers`);
   }
 

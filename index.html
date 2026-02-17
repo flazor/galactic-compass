@@ -21,7 +21,13 @@
       <div style="margin-bottom: 15px; font-size: 14px; text-align: center; border-bottom: 1px solid #00FF00; padding-bottom: 8px;">
         Cosmic Motion Levels
       </div>
-      
+
+      <div id="vizModeSelector" style="margin-bottom: 15px; display: flex; gap: 8px; justify-content: center;">
+        <label style="cursor: pointer;"><input type="radio" name="vizMode" value="markers" checked> Markers</label>
+        <label style="cursor: pointer;"><input type="radio" name="vizMode" value="distance"> Distance</label>
+        <label style="cursor: pointer;"><input type="radio" name="vizMode" value="particles"> Particles</label>
+      </div>
+
       <div style="margin-bottom: 10px;">
         <span id="levelDisplayText">Showing up to Level 8</span>
       </div>

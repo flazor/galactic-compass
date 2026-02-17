@@ -196,6 +196,17 @@ export class UIControls {
     });
   }
 
+  connectVisualizationModeManager(vizModeManager) {
+    this.vizModeManager = vizModeManager;
+
+    const radios = document.querySelectorAll('input[name="vizMode"]');
+    radios.forEach(radio => {
+      radio.addEventListener('change', (event) => {
+        this.vizModeManager.setMode(event.target.value);
+      });
+    });
+  }
+
   connectLevelManager(levelManager) {
     this.levelManager = levelManager;
     

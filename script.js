@@ -7,6 +7,10 @@ import { AssetManager } from './modules/assets/AssetManager.js';
 import { Coordinates } from './cosmic-core/src/astronomy/Coordinates.js';
 import { VERSION } from './cosmic-core/src/version.js';
 import { LevelManager } from './cosmic-core/src/config/LevelManager.js';
+import { VisualizationModeManager } from './modules/rendering/VisualizationModeManager.js';
+import { MarkersMode } from './modules/rendering/modes/MarkersMode.js';
+import { DistanceMode } from './modules/rendering/modes/DistanceMode.js';
+import { ParticlesMode } from './modules/rendering/modes/ParticlesMode.js';
 
 // Global instances
 const deviceOrientation = new DeviceOrientation();
@@ -14,7 +18,11 @@ const geolocation = new Geolocation();
 const sceneManager = new SceneManager();
 const uiControls = new UIControls();
 const levelManager = new LevelManager(uiControls);
-const celestialRenderer = new CelestialRenderer(sceneManager, uiControls, levelManager);
+const vizModeManager = new VisualizationModeManager(uiControls);
+vizModeManager.registerMode('markers', new MarkersMode(sceneManager, uiControls, levelManager));
+vizModeManager.registerMode('distance', new DistanceMode(sceneManager, uiControls, levelManager));
+vizModeManager.registerMode('particles', new ParticlesMode(sceneManager, uiControls, levelManager));
+const celestialRenderer = new CelestialRenderer(sceneManager, uiControls, levelManager, vizModeManager);
 const assetManager = new AssetManager(uiControls);
 
 // Listen for service worker messages
@@ -84,8 +92,10 @@ function loadBG() {
     uiControls.initialize();
     uiControls.setupHiResButton(loadHighResImage);
 
-    // Connect UI controls to level manager
+    // Connect UI controls to level manager and viz mode manager
     uiControls.connectLevelManager(levelManager);
+    uiControls.connectVisualizationModeManager(vizModeManager);
+    vizModeManager.setMode('markers');
     
     // Add level change listener to update motion container visibility when level changes
     levelManager.addLevelChangeListener((oldLevel, newLevel) => {
