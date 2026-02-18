@@ -26,6 +26,14 @@ export class SceneManager {
       virgoPull: document.getElementById('virgo-pull-container'),
       largeScaleFlow: document.getElementById('large-scale-flow-container'),
       cmbDipoleMotion: document.getElementById('cmb-dipole-motion-container'),
+      resultant1: document.getElementById('resultant-1-container'),
+      resultant2: document.getElementById('resultant-2-container'),
+      resultant3: document.getElementById('resultant-3-container'),
+      resultant4: document.getElementById('resultant-4-container'),
+      resultant5: document.getElementById('resultant-5-container'),
+      resultant6: document.getElementById('resultant-6-container'),
+      resultant7: document.getElementById('resultant-7-container'),
+      resultant8: document.getElementById('resultant-8-container'),
       milkyWay: document.getElementById('milky-way-container'),
       sun: document.getElementById('sun-container'),
       moon: document.getElementById('moon-container'),
@@ -58,6 +66,7 @@ export class SceneManager {
   }
 
   applyCompassCorrection(compassCorrection) {
+    this.compassCorrection = compassCorrection; // stored for particle direction
     // Apply compass correction to all containers
     Object.values(this.containers).forEach(container => {
       if (container) {
@@ -120,7 +129,9 @@ export class SceneManager {
   hideAllMotionContainers() {
     const motionContainers = [
       'earthRotation', 'earthOrbit', 'solarOrbit', 'localGroupMotion',
-      'localVoidPush', 'virgoPull', 'largeScaleFlow', 'cmbDipoleMotion'
+      'localVoidPush', 'virgoPull', 'largeScaleFlow', 'cmbDipoleMotion',
+      'resultant1', 'resultant2', 'resultant3', 'resultant4',
+      'resultant5', 'resultant6', 'resultant7', 'resultant8'
     ];
     motionContainers.forEach(name => {
       this.setMotionContainerVisibility(name, false);

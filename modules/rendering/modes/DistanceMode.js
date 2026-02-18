@@ -19,9 +19,6 @@ export class DistanceMode {
   }
 
   activate() {
-    // Hide markers
-    this.sceneManager.hideAllMotionContainers();
-
     this.startTime = Date.now();
     this.createOverlay();
     this.intervalId = setInterval(() => this.tick(), 100); // 10fps
@@ -54,7 +51,7 @@ export class DistanceMode {
   }
 
   tick() {
-    if (!this.overlay || !this.startTime) return;
+    if (!this.overlay || !this.startTime || this.lat == null) return;
 
     const elapsedSeconds = (Date.now() - this.startTime) / 1000;
     const levels = this.activeLevels || [];
@@ -140,15 +137,7 @@ function getLevelColor(level) {
 }
 
 function formatDistance(km) {
-  if (km < 1) {
-    return `${Math.round(km * 1000)} m`;
-  } else if (km < 1000) {
-    return `${km.toFixed(1)} km`;
-  } else if (km < 1000000) {
-    return `${(km / 1000).toFixed(1)} thousand km`;
-  } else {
-    return `${(km / 1000000).toFixed(2)} million km`;
-  }
+  return `${km.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
 }
 
 function formatDuration(seconds) {

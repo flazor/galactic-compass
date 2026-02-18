@@ -95,7 +95,9 @@ function loadBG() {
     // Connect UI controls to level manager and viz mode manager
     uiControls.connectLevelManager(levelManager);
     uiControls.connectVisualizationModeManager(vizModeManager);
-    vizModeManager.setMode('markers');
+    vizModeManager.enableMode('markers');
+    vizModeManager.enableMode('distance');
+    vizModeManager.enableMode('particles');
     
     // Add level change listener to update motion container visibility when level changes
     levelManager.addLevelChangeListener((oldLevel, newLevel) => {

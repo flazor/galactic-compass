@@ -199,10 +199,10 @@ export class UIControls {
   connectVisualizationModeManager(vizModeManager) {
     this.vizModeManager = vizModeManager;
 
-    const radios = document.querySelectorAll('input[name="vizMode"]');
-    radios.forEach(radio => {
-      radio.addEventListener('change', (event) => {
-        this.vizModeManager.setMode(event.target.value);
+    const checkboxes = document.querySelectorAll('input[name="vizMode"]');
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', (event) => {
+        this.vizModeManager.toggleMode(event.target.value, event.target.checked);
       });
     });
   }

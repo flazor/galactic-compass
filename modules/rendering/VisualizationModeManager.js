@@ -1,5 +1,5 @@
 /**
- * VisualizationModeManager - Manages switchable visualization modes
+ * VisualizationModeManager - Manages visualization modes (multiple can be active)
  *
  * Follows the same listener pattern as LevelManager.
  * Modes implement: activate(), deactivate(), render(), onLevelChange(), update(dt), needsAnimation
@@ -7,72 +7,66 @@
 export class VisualizationModeManager {
   constructor(uiControls) {
     this.uiControls = uiControls;
-    this.modes = new Map();       // name -> mode instance
-    this.activeModeName = null;
+    this.modes = new Map();        // name -> mode instance
+    this.activeModes = new Set();  // names of currently active modes
     this.listeners = new Set();
     this.animationFrameId = null;
     this.lastTimestamp = null;
+    this.lastRenderArgs = null;
   }
 
-  /**
-   * Register a mode by name
-   */
   registerMode(name, mode) {
     this.modes.set(name, mode);
     this.uiControls?.debugLog(`Viz mode registered: ${name}`);
   }
 
-  /**
-   * Get the currently active mode instance
-   */
   getActiveMode() {
-    return this.activeModeName ? this.modes.get(this.activeModeName) : null;
+    // Return first active mode (for CelestialRenderer's null check)
+    if (this.activeModes.size === 0) return null;
+    return this.modes.get(this.activeModes.values().next().value);
   }
 
-  /**
-   * Get the currently active mode name
-   */
-  getActiveModeName() {
-    return this.activeModeName;
+  isModeActive(name) {
+    return this.activeModes.has(name);
   }
 
-  /**
-   * Switch to a named mode
-   */
-  setMode(name) {
-    if (!this.modes.has(name)) {
-      this.uiControls?.debugLog(`Unknown viz mode: ${name}`);
-      return;
+  enableMode(name) {
+    if (!this.modes.has(name) || this.activeModes.has(name)) return;
+
+    this.activeModes.add(name);
+    const mode = this.modes.get(name);
+    mode.activate();
+
+    if (this.lastRenderArgs && mode.needsRenderReplay !== false) {
+      const { activeLevels, lat, lon, date } = this.lastRenderArgs;
+      mode.render(activeLevels, lat, lon, date);
     }
 
-    if (name === this.activeModeName) return;
-
-    const oldName = this.activeModeName;
-    const oldMode = this.getActiveMode();
-
-    // Deactivate current mode
-    if (oldMode) {
-      this.stopAnimationLoop();
-      oldMode.deactivate();
-    }
-
-    // Activate new mode
-    this.activeModeName = name;
-    const newMode = this.modes.get(name);
-    newMode.activate();
-
-    // Start animation loop if needed
-    if (newMode.needsAnimation) {
-      this.startAnimationLoop();
-    }
-
-    this.uiControls?.debugLog(`Viz mode: ${oldName || 'none'} -> ${name}`);
-    this.notifyListeners(oldName, name);
+    this.updateAnimationLoop();
+    this.uiControls?.debugLog(`Viz mode enabled: ${name}`);
+    this.notifyListeners();
   }
 
-  /**
-   * Add listener for mode changes. Callback receives (oldMode, newMode).
-   */
+  disableMode(name) {
+    if (!this.activeModes.has(name)) return;
+
+    const mode = this.modes.get(name);
+    mode.deactivate();
+    this.activeModes.delete(name);
+
+    this.updateAnimationLoop();
+    this.uiControls?.debugLog(`Viz mode disabled: ${name}`);
+    this.notifyListeners();
+  }
+
+  toggleMode(name, enabled) {
+    if (enabled) {
+      this.enableMode(name);
+    } else {
+      this.disableMode(name);
+    }
+  }
+
   addModeChangeListener(callback) {
     this.listeners.add(callback);
   }
@@ -81,49 +75,51 @@ export class VisualizationModeManager {
     this.listeners.delete(callback);
   }
 
-  notifyListeners(oldMode, newMode) {
+  notifyListeners() {
+    const active = [...this.activeModes];
     this.listeners.forEach(callback => {
       try {
-        callback(oldMode, newMode);
+        callback(active);
       } catch (error) {
         this.uiControls?.debugLog(`Error in mode change listener: ${error.message}`);
       }
     });
   }
 
-  /**
-   * Delegate render call to active mode
-   */
   render(activeLevels, lat, lon, date) {
-    const mode = this.getActiveMode();
-    if (mode) {
-      mode.render(activeLevels, lat, lon, date);
+    this.lastRenderArgs = { activeLevels, lat, lon, date };
+    for (const name of this.activeModes) {
+      this.modes.get(name).render(activeLevels, lat, lon, date);
     }
   }
 
-  /**
-   * Delegate level change to active mode
-   */
   onLevelChange(activeLevels) {
-    const mode = this.getActiveMode();
-    if (mode) {
-      mode.onLevelChange(activeLevels);
+    for (const name of this.activeModes) {
+      this.modes.get(name).onLevelChange(activeLevels);
     }
   }
 
-  /**
-   * Animation loop for modes that need per-frame updates
-   */
+  updateAnimationLoop() {
+    const needsAnim = [...this.activeModes].some(name => this.modes.get(name).needsAnimation);
+    if (needsAnim && this.animationFrameId === null) {
+      this.startAnimationLoop();
+    } else if (!needsAnim && this.animationFrameId !== null) {
+      this.stopAnimationLoop();
+    }
+  }
+
   startAnimationLoop() {
     this.lastTimestamp = null;
     const tick = (timestamp) => {
       if (!this.lastTimestamp) this.lastTimestamp = timestamp;
-      const dt = (timestamp - this.lastTimestamp) / 1000; // seconds
+      const dt = (timestamp - this.lastTimestamp) / 1000;
       this.lastTimestamp = timestamp;
 
-      const mode = this.getActiveMode();
-      if (mode && mode.needsAnimation) {
-        mode.update(dt);
+      for (const name of this.activeModes) {
+        const mode = this.modes.get(name);
+        if (mode.needsAnimation) {
+          mode.update(dt);
+        }
       }
 
       this.animationFrameId = requestAnimationFrame(tick);
