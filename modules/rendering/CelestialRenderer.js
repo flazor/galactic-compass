@@ -179,57 +179,22 @@ export class CelestialRenderer {
     this.uiControls?.debugLog(`Updated visibility: showing ${activeLevels.length} motion containers`);
   }
 
-  // Calculate vector sum of all active motion levels
+  // Calculate vector sum of all active motion levels and update sidebar
   calculateVectorSum(lat, lon, date) {
     if (!this.levelManager) return null;
 
-    // Get the max level from level manager
     const maxLevel = this.levelManager.getMaxLevel();
-
-    // Use the calculation layer to compute vector sum
     const vectorSumData = calcVectorSum(lat, lon, date, maxLevel);
-
     const resultant = vectorSumData.resultant;
+
     if (resultant) {
       this.uiControls?.debugLog(`Your velocity: ${Math.round(resultant.magnitude)} km/s toward ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
 
-      // Update UI display
-      this.updateVectorSumDisplay(vectorSumData.vectorSum);
+      // Pass all 8 levels (including inactive/unimplemented) to the sidebar
+      this.uiControls?.updateSidebar(vectorSumData.motionVectors, resultant, maxLevel);
     }
 
     return vectorSumData.vectorSum;
-  }
-
-  // Update the vector sum display in the UI
-  updateVectorSumDisplay(vectorSum) {
-    const vectorSumElement = document.getElementById('vectorSumText');
-    if (!vectorSumElement || !vectorSum) return;
-    
-    const resultant = vectorSum.getResultant();
-    if (!resultant) {
-      vectorSumElement.innerHTML = 'No motion vectors active';
-      return;
-    }
-    
-    const speed = Math.round(resultant.magnitude);
-    const azimuth = Math.round(resultant.azimuthDegrees);
-    const altitude = Math.round(resultant.altitudeDegrees);
-    
-    // Create detailed display
-    const summary = vectorSum.getSummary();
-    const vectorList = summary.vectors
-      .map(v => `${v.name}: ${v.magnitude} km/s`)
-      .join('<br>');
-    
-    vectorSumElement.innerHTML = `
-      <div style="font-weight: bold; color: #FFFF00;">
-        ${speed} km/s @ ${azimuth}° az, ${altitude}° alt
-      </div>
-      <div style="margin-top: 4px; opacity: 0.8; font-size: 9px;">
-        ${summary.vectorCount} active motions:<br>
-        ${vectorList}
-      </div>
-    `;
   }
 
   // Wait for texture to actually render (used by hi-res loading)

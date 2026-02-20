@@ -165,6 +165,7 @@ export function calculateVectorSum(lat, lon, date, maxLevel = 8) {
     resultant: resultant,
     summary: vectorSum.getSummary(),
     activeVectors: activeVectors,
+    motionVectors: motionVectors,
     maxLevel: maxLevel
   };
 }

@@ -5,62 +5,106 @@ export class UIControls {
     this.reloadBtn = null;
     this.hiResBtn = null;
     this.loadingIndicator = null;
-    
-    // Level controls
     this.levelToggleBtn = null;
-    this.levelPanel = null;
-    this.levelSlider = null;
-    this.levelDisplayText = null;
-    this.levelDescription = null;
-    this.levelStats = null;
+    this.sidebar = null;
     this.levelManager = null;
-    
-    // Initialization flag to prevent duplicate event listeners
+
+    // Distance/timer state
+    this.startTime = null;
+    this.cachedVelocities = {}; // level → km/s
+    this.cachedResultantMag = 0; // km/s
+    this.distIntervalId = null;
+
+    this.openDescLevel = null;
     this.initialized = false;
   }
 
   initialize() {
-    // Prevent duplicate initialization
-    if (this.initialized) {
-      return true;
-    }
+    if (this.initialized) return true;
 
-    // Cache UI element references
     this.debugDiv = document.getElementById('debugOutput');
     this.reloadBtn = document.getElementById('reloadButton');
     this.hiResBtn = document.getElementById('hiResButton');
     this.loadingIndicator = document.getElementById('loading-indicator');
-    
-    // Cache level control references
     this.levelToggleBtn = document.getElementById('levelControlsToggle');
-    this.levelPanel = document.getElementById('levelControlsPanel');
-    this.levelSlider = document.getElementById('levelSlider');
-    this.levelDisplayText = document.getElementById('levelDisplayText');
-    this.levelDescription = document.getElementById('levelDescription');
-    this.levelStats = document.getElementById('levelStats');
+    this.sidebar = document.getElementById('levelSidebar');
 
-    // Set up event listeners
     if (this.reloadBtn) {
-      this.reloadBtn.addEventListener('click', () => {
-        location.reload();
+      this.reloadBtn.addEventListener('click', () => location.reload());
+    }
+
+    if (this.levelToggleBtn) {
+      let pressTimer = null;
+      this.levelToggleBtn.addEventListener('pointerdown', () => {
+        pressTimer = setTimeout(() => {
+          pressTimer = 'fired';
+          this.toggleDebugWindow();
+        }, 1000);
+      });
+      this.levelToggleBtn.addEventListener('pointerup', () => {
+        if (pressTimer === 'fired') { pressTimer = null; return; }
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        this.toggleSidebar();
+      });
+      this.levelToggleBtn.addEventListener('pointerleave', () => {
+        if (pressTimer && pressTimer !== 'fired') clearTimeout(pressTimer);
+        pressTimer = null;
       });
     }
 
-    // Note: Debug div uses onclick="toggleDebugExpansion()" in HTML
+    for (let lvl = 1; lvl <= 8; lvl++) {
+      const node = document.getElementById(`sidebar-level-${lvl}`);
+      if (node) {
+        node.addEventListener('click', () => this.onLevelNodeClick(lvl));
+      }
+    }
 
-    // Set up level controls event listeners
-    this.setupLevelControls();
+    // Timer reset button
+    const resetBtn = document.getElementById('timer-reset');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.startTime = Date.now();
+      });
+    }
+
+    // Close sidebar when tapping outside
+    document.addEventListener('click', (e) => {
+      if (this.sidebar && this.sidebar.style.display !== 'none') {
+        if (!this.sidebar.contains(e.target) && !this.levelToggleBtn.contains(e.target)) {
+          this.toggleSidebar();
+        }
+      }
+    });
+
+    // Start distance/timer ticker
+    this.startTime = Date.now();
+    this.distIntervalId = setInterval(() => this._tickDistanceTimer(), 100);
 
     this.initialized = true;
     return true;
   }
 
+  toggleDebugWindow() {
+    if (!this.debugDiv) return;
+    const isVisible = this.debugDiv.style.display !== 'none';
+    this.debugDiv.style.display = isVisible ? 'none' : 'block';
+  }
+
+  toggleSidebar() {
+    if (!this.sidebar) return;
+    const isVisible = this.sidebar.style.display !== 'none';
+    this.sidebar.style.display = isVisible ? 'none' : 'flex';
+    if (this.levelToggleBtn) {
+      this.levelToggleBtn.style.borderColor = isVisible ? 'white' : '#00FF00';
+    }
+  }
+
   setupHiResButton(callback) {
-    // Set up hi-res button event listener with provided callback
     if (this.hiResBtn && callback) {
       this.hiResBtn.addEventListener('click', callback);
     }
-
     return true;
   }
 
@@ -71,14 +115,9 @@ export class UIControls {
 
     AFRAME.registerComponent('button', {
       init: () => {
-        // Reload button
         if (this.reloadBtn) {
-          this.reloadBtn.addEventListener('click', () => {
-            location.reload();
-          });
+          this.reloadBtn.addEventListener('click', () => location.reload());
         }
-
-        // Hi-res button
         if (this.hiResBtn && loadHighResImageCallback) {
           this.hiResBtn.addEventListener('click', loadHighResImageCallback);
         }
@@ -98,16 +137,8 @@ export class UIControls {
 
   toggleDebugExpansion() {
     if (!this.debugDiv) return;
-
     this.debugExpanded = !this.debugExpanded;
-
-    if (this.debugExpanded) {
-      this.debugDiv.style.maxHeight = '33vh';
-      this.debugDiv.style.width = '90vw';
-    } else {
-      this.debugDiv.style.maxHeight = '18px';
-      this.debugDiv.style.width = '90vw';
-    }
+    this.debugDiv.style.maxHeight = this.debugExpanded ? '33vh' : '18px';
   }
 
   setHiResButtonState(state, message = null) {
@@ -117,192 +148,192 @@ export class UIControls {
       case 'loading':
         this.hiResBtn.textContent = 'Loading...';
         this.hiResBtn.disabled = true;
-        if (this.loadingIndicator) {
-          this.loadingIndicator.style.display = 'block';
-        }
+        if (this.loadingIndicator) this.loadingIndicator.style.display = 'block';
         break;
-      
       case 'success':
         this.hiResBtn.textContent = 'Hi-Res ✓';
         this.hiResBtn.style.background = 'rgba(0,128,0,0.8)';
         this.hiResBtn.disabled = false;
-        if (this.loadingIndicator) {
-          this.loadingIndicator.style.display = 'none';
-        }
+        if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
         break;
-      
       case 'error':
         this.hiResBtn.textContent = 'Hi-Res ✗';
         this.hiResBtn.style.background = 'rgba(128,0,0,0.8)';
         this.hiResBtn.disabled = false;
-        if (this.loadingIndicator) {
-          this.loadingIndicator.style.display = 'none';
-        }
+        if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
         break;
-      
       default:
         this.hiResBtn.textContent = 'Hi-Res';
         this.hiResBtn.style.background = '';
         this.hiResBtn.disabled = false;
-        if (this.loadingIndicator) {
-          this.loadingIndicator.style.display = 'none';
-        }
+        if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
     }
 
-    if (message) {
-      this.debugLog(message);
-    }
+    if (message) this.debugLog(message);
   }
 
   showLoadingIndicator() {
-    if (this.loadingIndicator) {
-      this.loadingIndicator.style.display = 'block';
-    }
+    if (this.loadingIndicator) this.loadingIndicator.style.display = 'block';
   }
 
   hideLoadingIndicator() {
-    if (this.loadingIndicator) {
-      this.loadingIndicator.style.display = 'none';
-    }
-  }
-
-  // Level Control Methods
-
-  setupLevelControls() {
-    // Set up gear icon toggle
-    if (this.levelToggleBtn) {
-      this.levelToggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation(); // Prevent bubbling to document click listener
-        this.toggleLevelPanel();
-      });
-    }
-
-    // Set up slider
-    if (this.levelSlider) {
-      this.levelSlider.addEventListener('input', (event) => {
-        const level = parseInt(event.target.value);
-        this.onLevelSliderChange(level);
-      });
-    }
-
-    // Close panel when clicking outside (simple version)
-    document.addEventListener('click', (event) => {
-      if (this.levelPanel && this.levelPanel.style.display !== 'none') {
-        if (!this.levelPanel.contains(event.target) && 
-            !this.levelToggleBtn.contains(event.target)) {
-          this.hideLevelPanel();
-        }
-      }
-    });
+    if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
   }
 
   connectVisualizationModeManager(vizModeManager) {
     this.vizModeManager = vizModeManager;
 
-    const checkboxes = document.querySelectorAll('input[name="vizMode"]');
-    checkboxes.forEach(cb => {
-      cb.addEventListener('change', (event) => {
-        this.vizModeManager.toggleMode(event.target.value, event.target.checked);
+    const labels = document.querySelectorAll('#vizModeSelector label');
+    labels.forEach(label => {
+      const cb = label.querySelector('input[type="checkbox"]');
+      if (!cb) return;
+
+      // Set initial active state
+      if (cb.checked) label.classList.add('active');
+
+      // Toggle on label tap (checkbox is hidden)
+      label.addEventListener('click', (e) => {
+        e.preventDefault();
+        cb.checked = !cb.checked;
+        label.classList.toggle('active', cb.checked);
+        this.vizModeManager.toggleMode(cb.value, cb.checked);
       });
     });
   }
 
   connectLevelManager(levelManager) {
     this.levelManager = levelManager;
-    
-    // Listen for level changes to update UI
+
     if (this.levelManager) {
       this.levelManager.addLevelChangeListener((oldLevel, newLevel) => {
-        this.updateLevelDisplay(newLevel);
+        this.updateLevelActiveStates(newLevel);
       });
-      
-      // Initialize UI with current level
-      this.updateLevelDisplay(this.levelManager.getMaxLevel());
+
+      const currentLevel = this.levelManager.getMaxLevel();
+      this.updateLevelActiveStates(currentLevel);
     }
   }
 
-  toggleLevelPanel() {
-    if (!this.levelPanel) return;
-
-    const isVisible = this.levelPanel.style.display !== 'none';
-    
-    if (isVisible) {
-      this.hideLevelPanel();
-    } else {
-      this.showLevelPanel();
-    }
-  }
-
-  showLevelPanel() {
-    if (!this.levelPanel) return;
-
-    this.levelPanel.style.display = 'block';
-    
-    // Update gear button to show it's active (green border)
-    if (this.levelToggleBtn) {
-      this.levelToggleBtn.style.borderColor = '#00FF00';
-    }
-    
-    this.debugLog('Cosmic level controls opened');
-  }
-
-  hideLevelPanel() {
-    if (!this.levelPanel) return;
-
-    this.levelPanel.style.display = 'none';
-    
-    // Update gear button to show it's inactive (white border)
-    if (this.levelToggleBtn) {
-      this.levelToggleBtn.style.borderColor = 'white';
-    }
-    
-    this.debugLog('Cosmic level controls closed');
-  }
-
-  onLevelSliderChange(level) {
+  onLevelNodeClick(level) {
     if (this.levelManager) {
       this.levelManager.setMaxLevel(level);
-    } else {
-      this.debugLog(`Level slider changed to: ${level} (no level manager connected)`);
+    }
+    this.toggleLevelDescription(level);
+  }
+
+  toggleLevelDescription(level) {
+    if (!this.levelManager) return;
+
+    // Close any currently open description
+    if (this.openDescLevel && this.openDescLevel !== level) {
+      const prev = document.getElementById(`sidebar-desc-${this.openDescLevel}`);
+      if (prev) prev.style.display = 'none';
+    }
+
+    const descEl = document.getElementById(`sidebar-desc-${level}`);
+    if (!descEl) return;
+
+    // Toggle: if tapping same level, close it
+    if (this.openDescLevel === level && descEl.style.display !== 'none') {
+      descEl.style.display = 'none';
+      this.openDescLevel = null;
+      return;
+    }
+
+    const config = this.levelManager.getLevelConfig(level);
+    if (!config) return;
+    descEl.innerHTML = `<strong>${config.name}</strong><br>${config.description}<br><em>${config.velocityDescription} ${config.direction}</em><br><small>${config.scaleDescription}</small>`;
+    descEl.style.display = 'block';
+    this.openDescLevel = level;
+  }
+
+  updateLevelActiveStates(maxLevel) {
+    for (let lvl = 1; lvl <= 8; lvl++) {
+      const node = document.getElementById(`sidebar-level-${lvl}`);
+      if (node) {
+        node.classList.toggle('active', lvl <= maxLevel);
+        node.classList.toggle('selected', lvl === maxLevel);
+      }
+      const header = document.getElementById(`sidebar-header-${lvl}`);
+      if (header) header.style.display = lvl === maxLevel ? '' : 'none';
     }
   }
 
-  updateLevelDisplay(level) {
-    // Update slider position
-    if (this.levelSlider) {
-      this.levelSlider.value = level;
+  /**
+   * Update sidebar with fresh velocity/direction data. Caches velocities for
+   * the distance ticker to use between renders.
+   */
+  updateSidebar(motionVectors, resultant, maxLevel) {
+    // Cache resultant for ticker
+    this.cachedResultantMag = resultant?.magnitude ?? 0;
+
+    // Resultant row
+    if (resultant) {
+      const mag = resultant.magnitude;
+      const spd = mag < 10 ? mag.toFixed(2) : mag.toFixed(1);
+      const az  = resultant.azimuthDegrees.toFixed(2);
+      const alt = resultant.altitudeDegrees.toFixed(2);
+      this._setText('sidebar-resultant-vel', spd);
+      this._setText('sidebar-resultant-az',  `${az}°`);
+      this._setText('sidebar-resultant-alt', `${alt}°`);
     }
 
-    // Update display text
-    if (this.levelDisplayText) {
-      this.levelDisplayText.textContent = `Showing up to Level ${level}`;
-    }
+    this.updateLevelActiveStates(maxLevel);
 
-    // Update level description
-    this.updateLevelDescription(level);
+    for (let lvl = 1; lvl <= 8; lvl++) {
+      const vector = motionVectors?.find(v => v.level === lvl);
+      if (vector?.implemented && vector.velocity != null) {
+        // Cache velocity for distance ticker
+        this.cachedVelocities[lvl] = vector.velocity;
 
-    // Update stats
-    this.updateLevelStats(level);
-  }
-
-  updateLevelDescription(level) {
-    if (!this.levelDescription || !this.levelManager) return;
-
-    const levelConfig = this.levelManager.getLevelConfig(level);
-    if (levelConfig) {
-      const implementedText = levelConfig.implemented ? '' : ' (Not Implemented)';
-      this.levelDescription.innerHTML = `
-        <strong>${levelConfig.name}${implementedText}</strong><br>
-        ${levelConfig.description}<br>
-        ${levelConfig.velocityDescription} ${levelConfig.direction}
-      `;
+        const v = vector.velocity;
+        const spd = lvl === 1 ? v.toFixed(2) : v.toFixed(1);
+        const az  = vector.direction.azimuthDegrees.toFixed(2);
+        const alt = vector.direction.altitudeDegrees.toFixed(2);
+        this._setText(`sidebar-${lvl}-vel`, spd);
+        this._setText(`sidebar-${lvl}-az`,  `${az}°`);
+        this._setText(`sidebar-${lvl}-alt`, `${alt}°`);
+      }
     }
   }
 
-  updateLevelStats(level) {
-    if (!this.levelStats || !this.levelManager) return;
+  /** Called at 100ms intervals to update the timer and distance cells. */
+  _tickDistanceTimer() {
+    if (!this.startTime) return;
+    if (this.sidebar?.style.display === 'none') return;
+    const elapsed = (Date.now() - this.startTime) / 1000;
 
-    const state = this.levelManager.getStateDescription();
-    this.levelStats.textContent = `${state.maxLevel} of 8 levels • ${state.implementedLevels} implemented`;
+    this._setText('sidebar-timer', _formatDuration(elapsed));
+
+    // Resultant distance
+    this._setText('sidebar-resultant-dist', _formatDist(this.cachedResultantMag * elapsed));
+
+    // Per-level distances
+    for (let lvl = 1; lvl <= 8; lvl++) {
+      const vel = this.cachedVelocities[lvl];
+      if (vel != null) {
+        this._setText(`sidebar-${lvl}-dist`, _formatDist(vel * elapsed));
+      }
+    }
   }
+
+  _setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+}
+
+function _formatDuration(seconds) {
+  if (seconds < 60) return `${Math.floor(seconds)}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  if (m < 60) return `${m}m ${s}s`;
+  return `${Math.floor(m / 60)}h ${m % 60}m`;
+}
+
+function _formatDist(km) {
+  if (km < 1000)   return `${km.toFixed(1)} km`;
+  if (km < 1e6)    return `${(km / 1e3).toFixed(1)}K km`;
+  if (km < 1e9)    return `${(km / 1e6).toFixed(2)}M km`;
+  return               `${(km / 1e9).toFixed(2)}G km`;
 }

@@ -9,7 +9,6 @@ import { VERSION } from './cosmic-core/src/version.js';
 import { LevelManager } from './cosmic-core/src/config/LevelManager.js';
 import { VisualizationModeManager } from './modules/rendering/VisualizationModeManager.js';
 import { MarkersMode } from './modules/rendering/modes/MarkersMode.js';
-import { DistanceMode } from './modules/rendering/modes/DistanceMode.js';
 import { ParticlesMode } from './modules/rendering/modes/ParticlesMode.js';
 
 // Global instances
@@ -20,7 +19,6 @@ const uiControls = new UIControls();
 const levelManager = new LevelManager(uiControls);
 const vizModeManager = new VisualizationModeManager(uiControls);
 vizModeManager.registerMode('markers', new MarkersMode(sceneManager, uiControls, levelManager));
-vizModeManager.registerMode('distance', new DistanceMode(sceneManager, uiControls, levelManager));
 vizModeManager.registerMode('particles', new ParticlesMode(sceneManager, uiControls, levelManager));
 const celestialRenderer = new CelestialRenderer(sceneManager, uiControls, levelManager, vizModeManager);
 const assetManager = new AssetManager(uiControls);
@@ -96,7 +94,6 @@ function loadBG() {
     uiControls.connectLevelManager(levelManager);
     uiControls.connectVisualizationModeManager(vizModeManager);
     vizModeManager.enableMode('markers');
-    vizModeManager.enableMode('distance');
     vizModeManager.enableMode('particles');
     
     // Add level change listener to update motion container visibility when level changes
@@ -160,6 +157,11 @@ async function handleDeviceReady(heading) {
         uiControls.debugLog(`Initial: Your velocity ${Math.round(resultant.magnitude)} km/s @ ${Math.round(resultant.azimuthDegrees)}° az ${Math.round(resultant.altitudeDegrees)}° alt`);
       }
     }
+
+    // Recalculate az/alt every second (earth rotation shifts directions)
+    setInterval(() => {
+      celestialRenderer.calculateVectorSum(position.lat, position.lon, new Date());
+    }, 1000);
   } catch (error) {
     uiControls.debugLog('ERROR in handleDeviceReady: ' + error.message);
   }

@@ -64,26 +64,33 @@ export class MarkersMode {
       velocities.push({ velocity: resultantVelocities[maxLevel], elementId: `resultant-${maxLevel}-hud-text` });
     }
 
-    // Scale all circles using a shared max velocity
+    // Scale all markers using a shared max velocity
     const maxVelocity = Math.max(...velocities.map(v => v.velocity), 1);
     const maxRadius = 0.5;
     const minRadius = 0.05;
-    const sizeCircle = (id, velocity) => {
-      const circle = document.getElementById(id);
-      if (circle) {
-        circle.setAttribute('radius', Math.max(minRadius, maxRadius * Math.sqrt(velocity / maxVelocity)));
+    const ringThickness = 0.02;
+
+    const sizeMarker = (id, velocity) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const r = Math.max(minRadius, maxRadius * Math.sqrt(velocity / maxVelocity));
+      if (el.tagName === 'A-RING') {
+        el.setAttribute('radius-outer', r);
+        el.setAttribute('radius-inner', Math.max(r - ringThickness, r * 0.8));
+      } else {
+        el.setAttribute('radius', r);
       }
     };
 
     // Individual level circles
     velocities.forEach(({ velocity, elementId }) => {
-      sizeCircle(elementId.replace('-text', '-circle'), velocity);
+      sizeMarker(elementId.replace('-text', '-circle'), velocity);
     });
 
-    // All 8 resultant circles (so they're correctly sized when the slider changes)
+    // All 8 resultant rings (so they're correctly sized when the slider changes)
     for (let lvl = 1; lvl <= 8; lvl++) {
       if (resultantVelocities[lvl] != null) {
-        sizeCircle(`resultant-${lvl}-hud-circle`, resultantVelocities[lvl]);
+        sizeMarker(`resultant-${lvl}-hud-circle`, resultantVelocities[lvl]);
       }
     }
   }

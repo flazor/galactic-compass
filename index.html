@@ -8,51 +8,127 @@
 
   <body>
     <button id="reloadButton" style="position: fixed; top: 10px; left: 10px;">&#x21bb;</button>
-    <button id="hiResButton" style="position: fixed; top: 10px; right: 60px;">
-      Hi-Res
-    </button>
-    
-    <!-- Cosmic Level Controls -->
-    <button id="levelControlsToggle" style="position: fixed; top: 10px; right: 10px; color: #00FF00; border-color: white;" title="Cosmic Motion Levels">
-      ⚙️
-    </button>
-    
-    <div id="levelControlsPanel" style="position: fixed; top: 60px; left: 10px; right: 10px; background: rgba(0,0,0,0.5); border: 1px solid #00FF00; border-radius: 8px; padding: 15px; color: #00FF00; font-family: monospace; font-size: 12px; z-index: 10000; display: none;">
-      <div style="margin-bottom: 15px; font-size: 14px; text-align: center; border-bottom: 1px solid #00FF00; padding-bottom: 8px;">
-        Cosmic Motion Levels
+    <button id="hiResButton" style="position: fixed; top: 10px; left: 50px;">Hi-Res</button>
+    <button id="levelControlsToggle" style="position: fixed; top: 10px; right: 10px; color: #00FF00; border-color: white;" title="Cosmic Motion Levels">⚙️</button>
+
+    <!-- Level sidebar: toggled by gear button, hidden by default -->
+    <div id="levelSidebar" style="display: none;">
+      <div id="vizModeSelector">
+        <label title="Markers"><input type="checkbox" name="vizMode" value="markers" checked> Markers</label>
+        <label title="Particles"><input type="checkbox" name="vizMode" value="particles" checked> Particles</label>
+        <span class="toolbar-timer"><span id="sidebar-timer">0s</span><button id="timer-reset" class="timer-reset" title="Reset timer">↺</button></span>
       </div>
 
-      <div id="vizModeSelector" style="margin-bottom: 15px; display: flex; gap: 8px; justify-content: center;">
-        <label style="cursor: pointer;"><input type="checkbox" name="vizMode" value="markers" checked> Markers</label>
-        <label style="cursor: pointer;"><input type="checkbox" name="vizMode" value="distance" checked> Distance</label>
-        <label style="cursor: pointer;"><input type="checkbox" name="vizMode" value="particles" checked> Particles</label>
+      <!-- Level 8 → 1 (top to bottom = highest to lowest) -->
+      <div class="level-description" id="sidebar-desc-8" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-8" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-8" data-level="8">
+        <div class="level-name" style="color:#FFFFFF">CMB Dipole</div>
+        <div class="level-vel"  id="sidebar-8-vel">—</div>
+        <div class="level-az"   id="sidebar-8-az">—</div>
+        <div class="level-alt"  id="sidebar-8-alt">—</div>
+        <div class="level-dist" id="sidebar-8-dist">—</div>
+        <div class="level-dot"  style="background:#FFFFFF"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-7" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-7" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-7" data-level="7">
+        <div class="level-name" style="color:#FFA500">Large Flow</div>
+        <div class="level-vel"  id="sidebar-7-vel">—</div>
+        <div class="level-az"   id="sidebar-7-az">—</div>
+        <div class="level-alt"  id="sidebar-7-alt">—</div>
+        <div class="level-dist" id="sidebar-7-dist">—</div>
+        <div class="level-dot"  style="background:#FFA500"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-6" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-6" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-6" data-level="6">
+        <div class="level-name" style="color:#00FFFF">Virgo Pull</div>
+        <div class="level-vel"  id="sidebar-6-vel">—</div>
+        <div class="level-az"   id="sidebar-6-az">—</div>
+        <div class="level-alt"  id="sidebar-6-alt">—</div>
+        <div class="level-dist" id="sidebar-6-dist">—</div>
+        <div class="level-dot"  style="background:#00FFFF"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-5" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-5" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-5" data-level="5">
+        <div class="level-name" style="color:#FF00FF">Local Void</div>
+        <div class="level-vel"  id="sidebar-5-vel">—</div>
+        <div class="level-az"   id="sidebar-5-az">—</div>
+        <div class="level-alt"  id="sidebar-5-alt">—</div>
+        <div class="level-dist" id="sidebar-5-dist">—</div>
+        <div class="level-dot"  style="background:#FF00FF"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-4" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-4" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-4" data-level="4">
+        <div class="level-name" style="color:#FF4444">Local Group</div>
+        <div class="level-vel"  id="sidebar-4-vel">—</div>
+        <div class="level-az"   id="sidebar-4-az">—</div>
+        <div class="level-alt"  id="sidebar-4-alt">—</div>
+        <div class="level-dist" id="sidebar-4-dist">—</div>
+        <div class="level-dot"  style="background:#FF4444"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-3" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-3" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-3" data-level="3">
+        <div class="level-name" style="color:#FFFF00">Galactic Orbit</div>
+        <div class="level-vel"  id="sidebar-3-vel">—</div>
+        <div class="level-az"   id="sidebar-3-az">—</div>
+        <div class="level-alt"  id="sidebar-3-alt">—</div>
+        <div class="level-dist" id="sidebar-3-dist">—</div>
+        <div class="level-dot"  style="background:#FFFF00"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-2" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-2" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-2" data-level="2">
+        <div class="level-name" style="color:#4488FF">Earth Orbit</div>
+        <div class="level-vel"  id="sidebar-2-vel">—</div>
+        <div class="level-az"   id="sidebar-2-az">—</div>
+        <div class="level-alt"  id="sidebar-2-alt">—</div>
+        <div class="level-dist" id="sidebar-2-dist">—</div>
+        <div class="level-dot"  style="background:#4488FF"></div>
+      </div>
+      <div class="level-description" id="sidebar-desc-1" style="display:none"></div>
+      <div class="level-node level-header" id="sidebar-header-1" style="display:none">
+        <div class="col-label">Speed (km/s)</div><div class="col-label">az</div><div class="col-label">alt</div><div class="col-label">Distance (km)</div><div></div>
+      </div>
+      <div class="level-node" id="sidebar-level-1" data-level="1">
+        <div class="level-name" style="color:#00FF00">Earth Rotation</div>
+        <div class="level-vel"  id="sidebar-1-vel">—</div>
+        <div class="level-az"   id="sidebar-1-az">—</div>
+        <div class="level-alt"  id="sidebar-1-alt">—</div>
+        <div class="level-dist" id="sidebar-1-dist">—</div>
+        <div class="level-dot"  style="background:#00FF00"></div>
       </div>
 
-      <div style="margin-bottom: 10px;">
-        <span id="levelDisplayText">Showing up to Level 8</span>
-      </div>
-      
-      <div style="margin-bottom: 15px;">
-        <input type="range" id="levelSlider" min="1" max="8" value="8" 
-               style="width: 100%; height: 20px; background: #003300; border-radius: 10px;">
-      </div>
-      
-      <div id="levelDescription" style="margin-bottom: 15px; min-height: 60px; padding: 8px; background: rgba(0,255,0,0.1); border-radius: 4px; font-size: 11px;">
-        <strong>CMB Dipole</strong><br>
-        Net motion relative to Cosmic Microwave Background<br>
-        ~370 km/s toward Leo/Crater
-      </div>
-      
-      <div id="vectorSumDisplay" style="margin-bottom: 15px; padding: 8px; background: rgba(255,255,0,0.1); border-radius: 4px; font-size: 10px; border: 1px solid #FFFF00;">
-        <div style="font-weight: bold; margin-bottom: 5px; color: #FFFF00;">Your Velocity:</div>
-        <div id="vectorSumText">Calculating...</div>
-      </div>
-      
-      <div style="font-size: 10px; opacity: 0.7;">
-        <div id="levelStats">6 of 8 levels • 5 implemented</div>
+      <!-- Resultant (always active, at bottom) -->
+      <div class="level-node active level-resultant" id="sidebar-resultant">
+        <div class="level-name" style="color:#FFD700">Resultant</div>
+        <div class="level-vel"  id="sidebar-resultant-vel">—</div>
+        <div class="level-az"   id="sidebar-resultant-az">—</div>
+        <div class="level-alt"  id="sidebar-resultant-alt">—</div>
+        <div class="level-dist" id="sidebar-resultant-dist">—</div>
+        <div class="level-dot"  style="background:#FFD700"></div>
       </div>
     </div>
-    <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.5); color: #00FF00; padding: 10px; border-radius: 8px; font-size: 12px; width: 90vw; max-height: 18px; overflow-y: auto; z-index: 9999; font-family: monospace; cursor: pointer; transition: max-height 0.3s ease;" onclick="toggleDebugExpansion()">
+
+    <div id="debugOutput" style="display: none; position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.5); color: #00FF00; padding: 10px; border-radius: 8px; font-size: 12px; width: 90vw; max-height: 18px; overflow-y: auto; z-index: 9999; font-family: monospace; cursor: pointer; transition: max-height 0.3s ease;" onclick="toggleDebugExpansion()">
       Debug info will appear here... (click to expand)
     </div>
     <a-scene vr-mode-ui="enabled: false">
@@ -77,102 +153,120 @@
         <a-text id="south" value="S" color="#FF0000" position="490 0 0" scale="100 100 100" rotation="0 -90 0"></a-text>
         <a-text id="north" value="N" color="#FF0000" position="-490 0 0" scale="100 100 100" rotation="0 90 0"></a-text>
       </a-entity>
-      
+
+      <!-- Level markers: higher levels closer to camera (1=-2.0, 8=-1.3) -->
       <a-entity id="earth-rotation-container" look-at="[camera]">
-        <a-circle id="earth-rotation-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="earth-rotation-hud-circle" position="-2.0 0 0" rotation="0 90 0" radius="0.1"
           color="#00FF00" material="transparent: true; opacity: 0.2; side: double"></a-circle>
-        <a-text id="earth-rotation-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="earth-rotation-hud-text" position="-2.0 -0.18 0" rotation="0 90 0"
           value="" color="#00FF00" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="earth-orbit-container" look-at="[camera]">
-        <a-circle id="earth-orbit-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="earth-orbit-hud-circle" position="-1.9 0 0" rotation="0 90 0" radius="0.1"
           color="#0000FF" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="earth-orbit-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="earth-orbit-hud-text" position="-1.9 -0.18 0" rotation="0 90 0"
           value="" color="#0000FF" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="solar-orbit-container" look-at="[camera]">
-        <a-circle id="solar-orbit-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="solar-orbit-hud-circle" position="-1.8 0 0" rotation="0 90 0" radius="0.1"
           color="#FFFF00" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="solar-orbit-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="solar-orbit-hud-text" position="-1.8 -0.18 0" rotation="0 90 0"
           value="" color="#FFFF00" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="local-group-motion-container" look-at="[camera]">
-        <a-circle id="local-group-motion-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="local-group-motion-hud-circle" position="-1.7 0 0" rotation="0 90 0" radius="0.1"
           color="#FF0000" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="local-group-motion-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="local-group-motion-hud-text" position="-1.7 -0.18 0" rotation="0 90 0"
           value="" color="#FF0000" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="local-void-push-container" look-at="[camera]">
-        <a-circle id="local-void-push-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="local-void-push-hud-circle" position="-1.6 0 0" rotation="0 90 0" radius="0.1"
           color="#FF00FF" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="local-void-push-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="local-void-push-hud-text" position="-1.6 -0.18 0" rotation="0 90 0"
           value="" color="#FF00FF" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="virgo-pull-container" look-at="[camera]">
-        <a-circle id="virgo-pull-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="virgo-pull-hud-circle" position="-1.5 0 0" rotation="0 90 0" radius="0.1"
           color="#00FFFF" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="virgo-pull-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="virgo-pull-hud-text" position="-1.5 -0.18 0" rotation="0 90 0"
           value="" color="#00FFFF" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="large-scale-flow-container" look-at="[camera]">
-        <a-circle id="large-scale-flow-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="large-scale-flow-hud-circle" position="-1.4 0 0" rotation="0 90 0" radius="0.1"
           color="#FFA500" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="large-scale-flow-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="large-scale-flow-hud-text" position="-1.4 -0.18 0" rotation="0 90 0"
           value="" color="#FFA500" align="center" width="1.5"></a-text>
       </a-entity>
       <a-entity id="cmb-dipole-motion-container" look-at="[camera]">
-        <a-circle id="cmb-dipole-motion-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
+        <a-circle id="cmb-dipole-motion-hud-circle" position="-1.3 0 0" rotation="0 90 0" radius="0.1"
           color="#FFFFFF" material="transparent: true; opacity: 0.2; side: double; depthWrite: false"></a-circle>
-        <a-text id="cmb-dipole-motion-hud-text" position="-2 -0.18 0" rotation="0 90 0"
+        <a-text id="cmb-dipole-motion-hud-text" position="-1.3 -0.18 0" rotation="0 90 0"
           value="" color="#FFFFFF" align="center" width="1.5"></a-text>
       </a-entity>
+      <!-- Resultant markers: ring + center dot reticle, closest to camera -->
       <a-entity id="resultant-1-container" look-at="[camera]">
-        <a-circle id="resultant-1-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-1-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-1-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-1-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-2-container" look-at="[camera]">
-        <a-circle id="resultant-2-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-2-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-2-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-2-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-3-container" look-at="[camera]">
-        <a-circle id="resultant-3-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-3-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-3-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-3-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-4-container" look-at="[camera]">
-        <a-circle id="resultant-4-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-4-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-4-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-4-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-5-container" look-at="[camera]">
-        <a-circle id="resultant-5-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-5-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-5-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-5-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-6-container" look-at="[camera]">
-        <a-circle id="resultant-6-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-6-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-6-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-6-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-7-container" look-at="[camera]">
-        <a-circle id="resultant-7-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-7-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-7-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-7-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
       <a-entity id="resultant-8-container" look-at="[camera]">
-        <a-circle id="resultant-8-hud-circle" position="-2 0 0" rotation="0 90 0" radius="0.1"
-          color="#FFD700" material="transparent: true; opacity: 0.3; side: double; depthWrite: false"></a-circle>
-        <a-text id="resultant-8-hud-text" position="-2 -0.18 0" rotation="0 90 0"
-          value="" color="#FFD700" align="center" width="1.5"></a-text>
+        <a-ring id="resultant-8-hud-circle" position="-1.1 0 0" rotation="0 90 0" radius-inner="0.08" radius-outer="0.1"
+          color="#FFD700" material="transparent: true; opacity: 0.5; side: double; depthWrite: false"></a-ring>
+        <a-circle position="-1.1 0 0" rotation="0 90 0" radius="0.015"
+          color="#FFD700" material="side: double"></a-circle>
+        <a-text id="resultant-8-hud-text" position="-1.1 -0.16 0" rotation="0 90 0"
+          value="" color="#FFD700" align="center" width="1.2"></a-text>
       </a-entity>
 
     </a-scene>
@@ -185,7 +279,7 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
       .then((registration) => {
         console.log('Service Worker registered successfully:', registration.scope);
-        
+
         // Optional: Listen for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
