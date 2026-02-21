@@ -18,16 +18,17 @@ Discoverers: Nicolaus Copernicus (1543) - heliocentric model; Johannes Kepler (1
 Earlier Theory: Aristarchus of Samos (~270 BCE)
 References: Copernicus (1543), De revolutionibus; Kepler (1609), Astronomia nova; Kepler (1619), Harmonices Mundi
 
-3. Solar System's Galactic Orbit (~220 km/s)
+3. Solar System's Galactic Orbit (~232 km/s)
 
 Scale: Galactic orbit diameter = ~52,000 light-years (Sun's orbit around galaxy center)
-Direction (Solar Apex): Toward Lyra/Hercules
-RA: 18h 49m, Dec: +35.8°
-Near: Vega, M13
+Direction: Toward Cygnus (galactic rotation + solar peculiar motion)
+RA: 20h 50m, Dec: +46.5°
+Galactic: l = 87.3°, b = 1.8°
+Near: Deneb
 Period: ~230 million years (orbital) + ~30 million years (galactic plane oscillation)
-Discoverer: William Herschel (1783) - solar apex direction; Jan Oort (1927) - galactic rotation
-References: Herschel, W. (1783); Oort, J. (1927), Bull. Astron. Inst. Netherlands, 3, 275; Dehnen & Binney (1998), MNRAS, 298, 387
-Notes: Solar System oscillates ~27 parsecs above/below galactic plane with period ~33 Myr
+Discoverer: Jan Oort (1927) - galactic rotation; Schoenrich, Binney & Dehnen (2010) - solar peculiar motion
+References: Oort, J. (1927), Bull. Astron. Inst. Netherlands, 3, 275; Dehnen & Binney (1998), MNRAS, 298, 387; Schoenrich et al. (2010), MNRAS, 403, 1829
+Notes: Combines LSR circular speed (220 km/s toward l=90°, b=0°) with solar peculiar motion (U,V,W = 11.1, 12.2, 7.3 km/s). Solar System oscillates ~27 parsecs above/below galactic plane with period ~33 Myr
 
 4. Milky Way in Local Group (~62 km/s)
 

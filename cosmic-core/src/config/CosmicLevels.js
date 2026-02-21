@@ -113,21 +113,24 @@ export const COSMIC_LEVELS = [
     description: 'Solar System orbits around the Milky Way center while oscillating above/below the galactic plane',
 
     // Physics
-    velocity: 220, // km/s
-    velocityDescription: '~220 km/s',
-    direction: 'Toward Lyra/Hercules (Solar Apex)',
+    velocity: 232, // km/s (circular 220 + peculiar ~12 in rotation direction)
+    velocityDescription: '~232 km/s',
+    direction: 'Toward Cygnus (galactic rotation + peculiar motion)',
     period: '~230 million years (orbital) + ~30 million years (galactic plane oscillation)',
 
     // Scale
     scale: 52000, // light-years (galactic orbit diameter)
     scaleDescription: 'Galactic orbit diameter = ~52,000 light-years',
 
-    // Coordinates (RA/Dec) - Solar Apex direction
+    // Coordinates (RA/Dec) - Sun's total velocity relative to galactic center
+    // Galactic rotation (l=90°, b=0°) + peculiar motion (Schoenrich+ 2010)
+    // Combined: l ≈ 87.3°, b ≈ 1.8°
     coordinates: {
       type: 'radec',
-      ra: 18.8167, // 18h 49m 15.8s (toward Lyra constellation)
-      dec: 35.7983, // +35° 47' 53.6" (toward Vega region)
-      description: 'RA: 18h 49m, Dec: +35° 48\' (Solar Apex in Lyra, near Vega)'
+      ra: 20.833, // 20h 50m (toward Cygnus, near Deneb)
+      dec: 46.5, // +46.5°
+      galactic: 'l = 87.3°, b = 1.8°',
+      description: 'RA: 20h 50m, Dec: +46.5° (toward Cygnus, near Deneb)'
     },
 
     // Implementation
@@ -137,9 +140,9 @@ export const COSMIC_LEVELS = [
     elementId: 'solar-orbit-hud-text',
 
     // Historical
-    discoverer: 'William Herschel (1783) - solar apex direction; Jan Oort (1927) - galactic rotation',
-    references: 'Herschel, W. (1783); Oort, J. (1927), Bull. Astron. Inst. Netherlands, 3, 275; Dehnen & Binney (1998), MNRAS, 298, 387',
-    notes: 'Solar System oscillates ~27 parsecs above/below galactic plane with period ~33 Myr (galactic year ~230 Myr). Current motion: ~7 km/s northward from galactic plane.'
+    discoverer: 'Jan Oort (1927) - galactic rotation; Schoenrich, Binney & Dehnen (2010) - solar peculiar motion',
+    references: 'Oort, J. (1927), Bull. Astron. Inst. Netherlands, 3, 275; Dehnen & Binney (1998), MNRAS, 298, 387; Schoenrich et al. (2010), MNRAS, 403, 1829',
+    notes: 'Velocity combines LSR circular speed (220 km/s toward l=90°) with solar peculiar motion (U,V,W = 11.1, 12.2, 7.3 km/s per Schoenrich+ 2010). Solar System oscillates ~27 pc above/below galactic plane with period ~33 Myr.'
   },
 
   {
@@ -149,8 +152,8 @@ export const COSMIC_LEVELS = [
     description: 'Milky Way falls toward Local Group barycenter (on MW-Andromeda axis)',
 
     // Physics
-    velocity: 62, // km/s (Makarov et al. 2025)
-    velocityDescription: '~63 km/s',
+    velocity: 62, // km/s (Makarov et al. 2025: 62.6 ± 2.6)
+    velocityDescription: '~62 km/s',
     direction: 'Toward Local Group barycenter (near M31)',
     period: '~4.5 billion years until MW-M31 collision',
 
