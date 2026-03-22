@@ -97,7 +97,7 @@ export class UIControls {
     const isVisible = this.sidebar.style.display !== 'none';
     this.sidebar.style.display = isVisible ? 'none' : 'flex';
     if (this.levelToggleBtn) {
-      this.levelToggleBtn.style.borderColor = isVisible ? 'white' : '#00FF00';
+      this.levelToggleBtn.style.borderColor = isVisible ? 'rgba(68,170,255,0.25)' : '#4af';
     }
   }
 
@@ -276,6 +276,7 @@ export class UIControls {
       this._setText('sidebar-resultant-vel', spd);
       this._setText('sidebar-resultant-az',  `${az}°`);
       this._setText('sidebar-resultant-alt', `${alt}°`);
+
     }
 
     this.updateLevelActiveStates(maxLevel);

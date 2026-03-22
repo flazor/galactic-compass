@@ -1,58 +1,326 @@
-button {
-  padding: 5px 8px;
-  background: rgba(0,0,0,0.5);
-  color: white;
-  border: 1px solid white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  z-index: 9999;
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --hud-blue: #4af;
+  --hud-cyan: #6df8ff;
+  --hud-white: #e0f0ff;
+  --hud-dim: rgba(100, 180, 255, 0.4);
+  --hud-glow: 0 0 8px rgba(68, 170, 255, 0.5);
+  --hud-glow-strong: 0 0 14px rgba(68, 170, 255, 0.7), 0 0 30px rgba(68, 170, 255, 0.2);
+  --panel-bg: rgba(2, 12, 30, 0.75);
+  --panel-border: rgba(68, 170, 255, 0.25);
+  --panel-border-bright: rgba(68, 170, 255, 0.5);
 }
 
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Share Tech Mono', monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Cockpit Buttons === */
+button {
+  padding: 6px 14px;
+  background: var(--panel-bg);
+  color: var(--hud-blue);
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  z-index: 9999;
+  transition: all 0.2s;
+}
+
+button:hover, button:active {
+  border-color: var(--hud-blue);
+  text-shadow: var(--hud-glow);
+  background: rgba(68, 170, 255, 0.08);
+}
+
+#reloadButton, #hiResButton, #levelControlsToggle {
+  position: fixed;
+  top: 12px;
+}
+#reloadButton { left: 12px; }
+#hiResButton { left: 62px; }
+#levelControlsToggle {
+  right: 12px;
+  color: var(--hud-cyan);
+  border-color: var(--panel-border);
+  font-size: 16px;
+  padding: 4px 10px;
+}
+
+/* ============================================================
+   Cockpit HUD — reticle + cockpit-window panel
+   ============================================================ */
+
+/* ── Reticle (screen centre, rotates toward target) ── */
+#hud-reticle {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 9997;
+  pointer-events: none;
+  will-change: transform;
+  margin-left: -80px;
+  margin-top:  -80px;
+  transition: transform 0.08s linear;
+}
+
+.reticle-svg {
+  filter: drop-shadow(0 0 4px rgba(68, 170, 255, 0.2));
+  transition: transform 0.12s ease-out;
+}
+
+#hud-reticle.locked .reticle-svg {
+  filter: drop-shadow(0 0 12px rgba(68, 170, 255, 0.55));
+}
+#hud-reticle.locked .reticle-svg circle,
+#hud-reticle.locked .reticle-svg line,
+#hud-reticle.locked .reticle-svg path {
+  opacity: 0.9;
+}
+
+/* ── Cockpit-window panel (projected) ── */
+#hud-panel {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 9996;
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity 0.3s;
+  /* centre the frame on the projected point */
+  margin-left: -130px;
+  margin-top:  -90px;
+  width: 260px;
+  height: 180px;
+}
+
+/* Top strip — velocity readout */
+.cw-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(2, 10, 25, 0.2);
+  border-bottom: 1px solid rgba(68, 170, 255, 0.12);
+}
+
+/* Corner accents on top strip */
+.cw-top::before, .cw-top::after {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  border-color: rgba(68, 170, 255, 0.3);
+  border-style: solid;
+}
+.cw-top::before { top: 0; left: 0; border-width: 1px 0 0 1px; }
+.cw-top::after  { top: 0; right: 0; border-width: 1px 1px 0 0; }
+
+/* Bottom strip — bearing + levels */
+.cw-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 5px 12px 6px;
+  background: rgba(2, 10, 25, 0.2);
+  border-top: 1px solid rgba(68, 170, 255, 0.12);
+}
+
+.cw-bottom::before, .cw-bottom::after {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  border-color: rgba(68, 170, 255, 0.3);
+  border-style: solid;
+}
+.cw-bottom::before { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+.cw-bottom::after  { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+
+/* Thin side rails connecting top and bottom */
+#hud-panel::before, #hud-panel::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 0;
+  border-left: 1px solid rgba(68, 170, 255, 0.06);
+}
+#hud-panel::before { left: 0; }
+#hud-panel::after  { right: 0; border-left: none; border-right: 1px solid rgba(68, 170, 255, 0.06); }
+
+/* ── Locked state ── */
+#hud-panel.locked .cw-top,
+#hud-panel.locked .cw-bottom {
+  background: rgba(2, 10, 25, 0.3);
+}
+#hud-panel.locked .cw-top    { border-color: rgba(68, 170, 255, 0.25); }
+#hud-panel.locked .cw-bottom { border-color: rgba(68, 170, 255, 0.25); }
+#hud-panel.locked::before,
+#hud-panel.locked::after { border-color: rgba(68, 170, 255, 0.12); }
+
+/* ── Typography ── */
+.cw-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--hud-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.cw-speed {
+  font-family: 'Orbitron', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--hud-white);
+  text-shadow: var(--hud-glow-strong);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.cw-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--hud-dim);
+  letter-spacing: 0.05em;
+}
+
+.cw-sep {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  background: rgba(68, 170, 255, 0.12);
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.cw-cfrac {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--hud-cyan);
+  text-shadow: var(--hud-glow);
+  letter-spacing: 0.03em;
+}
+
+.cw-c {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--hud-dim);
+  margin-left: 2px;
+}
+
+.cw-bearing {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: var(--hud-blue);
+  text-shadow: var(--hud-glow);
+  letter-spacing: 0.03em;
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+}
+
+.cw-dim {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--hud-dim);
+  letter-spacing: 0.12em;
+}
+
+.cw-levels {
+  margin-top: 3px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cw-lv {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  color: rgba(200, 220, 255, 0.5);
+  letter-spacing: 0.02em;
+}
+
+.cw-ln {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--hud-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-right: 3px;
+}
+
+/* === Level Sidebar === */
 #levelSidebar {
   position: fixed;
-  top: 60px;
+  top: 52px;
   left: 10px;
   right: 10px;
-  max-height: calc(100vh - 80px);
-  background: rgba(0,0,0,0.6);
-  border: 1px solid #00FF00;
-  border-radius: 8px;
+  max-height: calc(100vh - 70px);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 2px;
   display: flex;
   flex-direction: column;
   z-index: 10000;
-  font-family: monospace;
+  font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
-  color: #ccc;
+  color: rgba(200, 220, 255, 0.7);
   overflow-y: auto;
   padding: 4px 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Corner accents on sidebar */
+#levelSidebar::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px;
+  width: 20px; height: 20px;
+  border-top: 2px solid var(--hud-blue);
+  border-left: 2px solid var(--hud-blue);
+  pointer-events: none;
 }
 
 #levelSidebar #vizModeSelector {
   display: flex;
   gap: 6px;
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(68, 170, 255, 0.1);
   justify-content: center;
   flex-shrink: 0;
 }
 
 #levelSidebar #vizModeSelector label {
   cursor: pointer;
-  color: rgba(255,255,255,0.5);
-  font-size: 12px;
+  color: var(--hud-dim);
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
   padding: 4px 12px;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 14px;
+  border: 1px solid rgba(68, 170, 255, 0.15);
+  border-radius: 1px;
   transition: all 0.15s;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 #levelSidebar #vizModeSelector label.active {
-  color: #fff;
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.5);
+  color: var(--hud-cyan);
+  background: rgba(68, 170, 255, 0.08);
+  border-color: var(--panel-border-bright);
+  text-shadow: var(--hud-glow);
 }
 
 #levelSidebar #vizModeSelector input[type="checkbox"] {
@@ -61,28 +329,29 @@ button {
 
 .level-description {
   padding: 6px 14px 8px;
-  font-size: 13px;
-  color: rgba(255,255,255,0.85);
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+  color: rgba(200, 220, 255, 0.75);
+  background: rgba(68, 170, 255, 0.03);
+  border-bottom: 1px solid rgba(68, 170, 255, 0.08);
   line-height: 1.6;
   flex-shrink: 0;
 }
 
 .level-description strong {
-  color: #00FF00;
-  font-size: 14px;
+  color: var(--hud-cyan);
+  font-size: 13px;
+  text-shadow: var(--hud-glow);
 }
 
 .level-description em {
-  color: rgba(255,255,255,0.7);
+  color: rgba(200, 220, 255, 0.6);
   font-style: normal;
 }
 
 .level-description small {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 1;
-  color: #fff;
+  color: var(--hud-dim);
 }
 
 .toolbar-timer {
@@ -91,8 +360,8 @@ button {
   gap: 4px;
   margin-left: auto;
   font-size: 11px;
-  color: rgba(255,255,255,0.45);
-  font-family: monospace;
+  color: var(--hud-dim);
+  font-family: 'Share Tech Mono', monospace;
   letter-spacing: 0.05em;
 }
 
@@ -100,25 +369,25 @@ button {
   padding: 1px 4px;
   font-size: 11px;
   line-height: 1;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(68, 170, 255, 0.15);
   background: transparent;
-  color: rgba(255,255,255,0.4);
-  border-radius: 4px;
+  color: var(--hud-dim);
+  border-radius: 1px;
   cursor: pointer;
   z-index: auto;
 }
 
-/* Grid: [vel] [az] [alt] [dist] [name] — name reordered via CSS order */
+/* Grid: [vel] [az] [alt] [dist] [name] */
 #levelSidebar .level-node {
   display: grid;
   grid-template-columns: 54px 64px 64px 74px 1fr;
   align-items: center;
   padding: 7px 12px 7px 10px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(68, 170, 255, 0.05);
   gap: 8px;
-  opacity: 0.35;
-  transition: opacity 0.15s, background 0.15s;
+  opacity: 0.3;
+  transition: opacity 0.2s, background 0.2s;
 }
 
 #levelSidebar .level-node.active {
@@ -126,25 +395,25 @@ button {
 }
 
 #levelSidebar .level-node.selected {
-  background: rgba(255,255,255,0.12);
-  border-left: 3px solid rgba(255,255,255,0.6);
+  background: rgba(68, 170, 255, 0.08);
+  border-left: 2px solid var(--hud-blue);
 }
 
 #levelSidebar .level-node:active {
-  background: rgba(255,255,255,0.14);
+  background: rgba(68, 170, 255, 0.12);
 }
 
 #levelSidebar .level-node.level-header {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
   padding-top: 4px;
   padding-bottom: 3px;
 }
 
 #levelSidebar .level-node.level-resultant {
-  background: rgba(255,215,0,0.12);
-  border-top: 1px solid rgba(255,215,0,0.35);
-  border-left: 3px solid #FFD700;
+  background: rgba(68, 170, 255, 0.06);
+  border-top: 1px solid rgba(68, 170, 255, 0.2);
+  border-left: 2px solid var(--hud-blue);
   margin-top: 2px;
 }
 
@@ -152,7 +421,7 @@ button {
 #levelSidebar .level-node.level-resultant .level-az,
 #levelSidebar .level-node.level-resultant .level-alt,
 #levelSidebar .level-node.level-resultant .level-dist {
-  color: rgba(255,255,255,0.85);
+  color: var(--hud-white);
   font-size: 11px;
 }
 
@@ -162,6 +431,8 @@ button {
   font-weight: bold;
   text-align: left;
   line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 #levelSidebar .level-vel,
@@ -169,17 +440,46 @@ button {
 #levelSidebar .level-alt,
 #levelSidebar .level-dist {
   font-size: 12px;
-  color: rgba(255,255,255,0.9);
+  color: rgba(200, 220, 255, 0.85);
   text-align: left;
   white-space: nowrap;
 }
 
 #levelSidebar .col-label {
-  font-size: 12px;
-  color: rgba(255,255,255,0.8);
+  font-size: 10px;
+  color: var(--hud-dim);
   text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 #levelSidebar .level-dot {
   display: none;
+}
+
+/* === Debug Panel === */
+#debugOutput {
+  font-family: 'Share Tech Mono', monospace;
+  background: var(--panel-bg) !important;
+  color: var(--hud-blue) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: 2px !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* === Scanline overlay (subtle) === */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 10, 30, 0.03) 2px,
+    rgba(0, 10, 30, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 99998;
 }
