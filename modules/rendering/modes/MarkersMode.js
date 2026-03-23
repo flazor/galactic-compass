@@ -1,14 +1,13 @@
 /**
  * MarkersMode — Cockpit Window HUD
  *
- * RETICLE  — screen-centre crosshair. Chevrons rotate to point toward
- *            the travel direction. Slides to lock onto the panel centre
- *            when you look directly at the velocity vector.
+ * RETICLE  — screen-centre crosshair (don't touch — approved design).
  *
- * PANEL    — large transparent cockpit-window frame projected at the
- *            resultant velocity direction. Data is arranged around the
- *            edges (top strip: velocity; bottom strip: bearing + levels).
- *            Centre is open so the starfield shows through.
+ * WINDOW   — wireframe cockpit window projected at the resultant velocity
+ *            direction. Per-level telemetry around the edges:
+ *              TOP:    speed + live distance traveled per level
+ *              BOTTOM: az / alt per level
+ *            Centre is open & transparent. Reticle locks into centre.
  */
 import { calculateVectorSum } from '../../../cosmic-core/src/calculations/CelestialCalculations.js';
 import { Coordinates } from '../../../cosmic-core/src/astronomy/Coordinates.js';
@@ -17,22 +16,37 @@ const C            = 299792.458;
 const PROJECT_DIST = 5;
 const LOCK_RADIUS  = 60;
 
+function fmtSpd(v) { return v < 1 ? v.toFixed(3) : v < 10 ? v.toFixed(2) : v.toFixed(1); }
+function fmtDist(km) {
+  if (km < 1000) return `${km.toFixed(0)}`;
+  if (km < 1e6)  return `${(km / 1e3).toFixed(1)}K`;
+  if (km < 1e9)  return `${(km / 1e6).toFixed(1)}M`;
+  return `${(km / 1e9).toFixed(2)}B`;
+}
+function shortName(name) {
+  return name
+    .replace("Earth's Orbit Around Sun", 'ORBIT')
+    .replace("Solar System's Galactic Orbit", 'GALACTIC')
+    .replace('Earth Rotation', 'ROTATION');
+}
+
 export class MarkersMode {
   constructor(sceneManager, uiControls, levelManager) {
     this.sceneManager = sceneManager;
     this.uiControls   = uiControls;
     this.levelManager = levelManager;
-    this.needsAnimation   = true;
+    this.needsAnimation    = true;
     this.needsRenderReplay = true;
 
-    this.resultant = null;
-    this.worldPos  = null;
-    this.levelData = [];
-    this.reticleEl = null;
-    this.panelEl   = null;
-    this.lastLat   = null;
-    this.lastLon   = null;
-    this.lastDate  = null;
+    this.resultant  = null;
+    this.worldPos   = null;
+    this.levelData  = [];   // [{ name, velocity, azDeg, altDeg }]
+    this.reticleEl  = null;
+    this.panelEl    = null;
+    this.lastLat    = null;
+    this.lastLon    = null;
+    this.lastDate   = null;
+    this.startTime  = Date.now();
   }
 
   /* ── lifecycle ─────────────────────────────────────────── */
@@ -60,15 +74,21 @@ export class MarkersMode {
 
   _recalc() {
     this.sceneManager.hideAllMotionContainers();
-    const lvl  = this.levelManager?.getMaxLevel() ?? 1;
-    const data = calculateVectorSum(this.lastLat, this.lastLon, this.lastDate, lvl);
+    const maxLvl = this.levelManager?.getMaxLevel() ?? 1;
+    const data   = calculateVectorSum(this.lastLat, this.lastLon, this.lastDate, maxLvl);
     if (!data?.resultant) return;
 
     this.resultant = data.resultant;
+
+    // Per-level: name, velocity, direction
     this.levelData = (data.activeVectors || []).map(v => ({
-      name: v.name, velocity: v.velocity,
+      name:     v.name,
+      velocity: v.velocity,
+      azDeg:    v.direction.azimuthDegrees,
+      altDeg:   v.direction.altitudeDegrees,
     }));
 
+    // World-space target
     const corr = Coordinates.toRadians(this.sceneManager.compassCorrection ?? 0);
     const az   = Coordinates.toRadians(this.resultant.azimuthDegrees);
     const alt  = Coordinates.toRadians(this.resultant.altitudeDegrees);
@@ -79,7 +99,7 @@ export class MarkersMode {
     ).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), corr);
     this.worldPos = dir.multiplyScalar(PROJECT_DIST);
 
-    this._setText();
+    this._rebuildRows();
   }
 
   /* ── per-frame (60 Hz) ─────────────────────────────────── */
@@ -89,6 +109,7 @@ export class MarkersMode {
     const scene = document.querySelector('a-scene');
     if (!scene?.camera) return;
 
+    /* ── projection ── */
     const v = this.worldPos.clone().project(scene.camera);
     const behind = v.z > 1;
     const hw = window.innerWidth / 2;
@@ -98,11 +119,9 @@ export class MarkersMode {
     let ty = hh - v.y * hh;
     if (behind) { tx = hw * 2 - tx; ty = hh * 2 - ty; }
 
-    const dx = tx - hw;
-    const dy = ty - hh;
+    const dx = tx - hw, dy = ty - hh;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    /* ── panel position ── */
     const pad = 10;
     const px = Math.max(pad, Math.min(window.innerWidth  - pad, tx));
     const py = Math.max(pad, Math.min(window.innerHeight - pad, ty));
@@ -111,9 +130,9 @@ export class MarkersMode {
     const onScreen = !behind
       && tx > pad && tx < window.innerWidth - pad
       && ty > pad && ty < window.innerHeight - pad;
-    this.panelEl.style.opacity = onScreen ? '1' : '0.2';
+    this.panelEl.style.opacity = onScreen ? '1' : '0.15';
 
-    /* ── lock detection ── */
+    /* ── lock ── */
     const locked = dist < LOCK_RADIUS && onScreen;
     this.panelEl.classList.toggle('locked', locked);
     this.reticleEl.classList.toggle('locked', locked);
@@ -128,83 +147,61 @@ export class MarkersMode {
       const angle = Math.atan2(dx, -dy) * (180 / Math.PI);
       if (svg) svg.style.transform = `rotate(${angle}deg)`;
     }
+
+    /* ── tick distance ── */
+    if (this.resultant) {
+      const elapsed = (Date.now() - this.startTime) / 1000;
+      const el = document.getElementById('wf-dist');
+      if (el) el.textContent = fmtDist(this.resultant.magnitude * elapsed);
+    }
   }
 
   /* ── DOM ────────────────────────────────────────────────── */
 
   _build() {
-    /* ── Reticle ── */
+    /* ── Reticle (approved — don't change) ── */
     this.reticleEl = document.createElement('div');
     this.reticleEl.id = 'hud-reticle';
     this.reticleEl.innerHTML = `
       <svg class="reticle-svg" viewBox="-60 -60 120 120" width="160" height="160">
-        <!-- rings -->
         <circle cx="0" cy="0" r="40" fill="none" stroke="#4af" stroke-width="0.5" opacity="0.25"/>
-        <!-- crosshair lines -->
         <line x1="0" y1="-24" x2="0" y2="-38" stroke="#4af" stroke-width="0.6" opacity="0.4"/>
         <line x1="0" y1="24"  x2="0" y2="38"  stroke="#4af" stroke-width="0.6" opacity="0.4"/>
         <line x1="-24" y1="0" x2="-38" y2="0" stroke="#4af" stroke-width="0.6" opacity="0.4"/>
         <line x1="24"  y1="0" x2="38"  y2="0" stroke="#4af" stroke-width="0.6" opacity="0.4"/>
-        <!-- primary chevron (top) — points toward target -->
         <path d="M-7,-44 L0,-53 L7,-44" fill="none" stroke="#4af" stroke-width="1.4" stroke-linecap="round" opacity="0.85"/>
         <path d="M-5,-50 L0,-57 L5,-50" fill="none" stroke="#4af" stroke-width="0.6" opacity="0.35"/>
-        <!-- subtle side/bottom chevrons -->
         <path d="M44,-5 L53,0 L44,5"    fill="none" stroke="#4af" stroke-width="0.5" opacity="0.15"/>
         <path d="M-44,-5 L-53,0 L-44,5" fill="none" stroke="#4af" stroke-width="0.5" opacity="0.15"/>
         <path d="M-5,44 L0,53 L5,44"    fill="none" stroke="#4af" stroke-width="0.5" opacity="0.15"/>
-        <!-- centre pip -->
         <circle cx="0" cy="0" r="2" fill="none" stroke="#4af" stroke-width="0.6" opacity="0.5"/>
         <circle cx="0" cy="0" r="0.7" fill="#e0f0ff"/>
       </svg>`;
     document.body.appendChild(this.reticleEl);
 
-    /* ── Panel (cockpit window frame) ── */
+    /* ── Window frame ── */
     this.panelEl = document.createElement('div');
     this.panelEl.id = 'hud-panel';
     this.panelEl.innerHTML = `
-      <div class="cw-top">
-        <span class="cw-label" id="hp-label">RESULTANT</span>
-        <span class="cw-speed" id="hp-speed">---</span>
-        <span class="cw-unit">km/s</span>
-        <span class="cw-sep"></span>
-        <span class="cw-cfrac" id="hp-cfrac">-.---</span>
-        <span class="cw-c">c</span>
+      <div class="wf-top">
+        <span class="wf-left"><span class="wf-speed" id="wf-speed">---</span> <span class="wf-unit">km/s</span></span>
+        <span class="wf-right"><span class="wf-dist" id="wf-dist">0</span> <span class="wf-unit">km</span></span>
       </div>
-      <div class="cw-bottom">
-        <div class="cw-bearing">
-          <span class="cw-dim">AZ</span><span id="hp-az">---°</span>
-          <span class="cw-dim">ALT</span><span id="hp-alt">---°</span>
-          <span class="cw-dim">LVL</span><span id="hp-lvl">-</span>
-        </div>
-        <div class="cw-levels" id="hp-levels"></div>
+      <div class="wf-bottom">
+        <span class="wf-az" id="wf-az">---°</span>
+        <span class="wf-alt" id="wf-alt">---°</span>
       </div>`;
     document.body.appendChild(this.panelEl);
   }
 
-  _setText() {
+  _rebuildRows() {
     if (!this.panelEl || !this.resultant) return;
     const m = this.resultant.magnitude;
-    const lvl = this.levelManager?.getMaxLevel() ?? 1;
 
-    this._s('hp-speed', m < 10 ? m.toFixed(2) : m.toFixed(1));
-    const cf = m / C;
-    this._s('hp-cfrac', cf < 0.001 ? cf.toExponential(2) : cf.toFixed(6));
-    this._s('hp-az',  `${this.resultant.azimuthDegrees.toFixed(1)}°`);
+    this._s('wf-speed', m < 10 ? m.toFixed(2) : m.toFixed(1));
+    this._s('wf-az', `${this.resultant.azimuthDegrees.toFixed(1)}°`);
     const sign = this.resultant.altitudeDegrees >= 0 ? '+' : '';
-    this._s('hp-alt', `${sign}${this.resultant.altitudeDegrees.toFixed(1)}°`);
-    this._s('hp-lvl', lvl);
-
-    const el = document.getElementById('hp-levels');
-    if (el) {
-      el.innerHTML = this.levelData.map(l => {
-        const v = l.velocity < 10 ? l.velocity.toFixed(2) : l.velocity.toFixed(1);
-        const n = l.name
-          .replace("Earth's Orbit Around Sun", 'Orbit')
-          .replace("Solar System's Galactic Orbit", 'Galactic')
-          .replace('Earth Rotation', 'Rotation');
-        return `<span class="cw-lv"><span class="cw-ln">${n}</span> ${v}</span>`;
-      }).join('');
-    }
+    this._s('wf-alt', `${sign}${this.resultant.altitudeDegrees.toFixed(1)}°`);
   }
 
   _s(id, t) { const e = document.getElementById(id); if (e) e.textContent = t; }
