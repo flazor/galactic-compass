@@ -21,7 +21,7 @@ const MAX_SUN      = 20;
 
 // Layout
 const BOARD_HALF   = 0.2;
-const BOARD_Y      = -1.0;
+const BOARD_Y      = -0.55;
 const SPAWN_DIST   = 2.5;
 const SPREAD       = 0.25;
 const CEL_SPREAD   = 0.04;
@@ -126,6 +126,14 @@ export class ParticlesMode {
       azAltToWorldDir(vectorSumData.resultant.azimuthDegrees, vectorSumData.resultant.altitudeDegrees, corrRad)
     );
     this.exhaustDir.copy(this.moveDir).negate();
+
+    // Orient board nose toward the direction of travel
+    if (this.board?.object3D) {
+      const boardPos = this.board.object3D.position;
+      const target = boardPos.clone().add(this.moveDir);
+      this.board.object3D.lookAt(target);
+      // lookAt points -Z at target, but our nose is -Z, so this is correct
+    }
   }
 
   update(dt) {
@@ -200,11 +208,15 @@ export class ParticlesMode {
   }
 
   spawnExhaust() {
-    if (!this.container) return;
-    const x = (Math.random() - 0.5) * BOARD_HALF * 2;
-    const z = (Math.random() - 0.5) * BOARD_HALF * 2;
-    const pos = new THREE.Vector3(x, BOARD_Y, z);
-    const size = 0.008 + Math.random() * 0.012;
+    if (!this.container || !this.board?.object3D) return;
+    // Sparks emit from the back half of the surfboard in board-local space,
+    // then transformed to world space so they follow the board's rotation
+    const x = (Math.random() - 0.5) * 0.14;  // board width
+    const z = 0.1 + Math.random() * 0.3;      // back half of board (local +Z)
+    const pos = new THREE.Vector3(x, -0.01, z);
+    this.board.object3D.updateMatrixWorld(true);
+    pos.applyMatrix4(this.board.object3D.matrixWorld);
+    const size = 0.006 + Math.random() * 0.014;
     this._spawn(pos, size, 0.9, EXHAUST_LIFE, this.exhaustParticles, true);
   }
 
@@ -263,15 +275,118 @@ export class ParticlesMode {
     this.container = document.createElement('a-entity');
     this.container.id = 'particles-mode-container';
 
-    // Hoverboard
-    const board = document.createElement('a-plane');
+    // ── Surfboard (custom THREE.js geometry) ──
+    // Proper surfboard outline: pointed nose, widest forward of centre,
+    // tapering to a squash tail. Bezier curves for smooth rails.
+    const board = document.createElement('a-entity');
     board.setAttribute('position', `0 ${BOARD_Y} 0`);
-    board.setAttribute('rotation', '-90 0 0');
-    board.setAttribute('width', BOARD_HALF * 2);
-    board.setAttribute('height', BOARD_HALF * 2);
-    board.setAttribute('color', '#AADDFF');
-    board.setAttribute('material', 'opacity: 0.4; transparent: true; side: double');
+
+    // Build the board shape once the entity is in the scene
+    board.addEventListener('loaded', () => {
+      // Outline in local x,y — will be rotated flat (y becomes z)
+      // Nose at y=-0.45, tail at y=+0.36, width ±0.09
+      const shape = new THREE.Shape();
+      shape.moveTo(0, -0.45);  // nose tip
+      // Right rail: nose → widest point (forward of centre)
+      shape.bezierCurveTo(0.03, -0.38,  0.085, -0.2,  0.09, -0.05);
+      // Right rail: widest → tail
+      shape.bezierCurveTo(0.09, 0.12,  0.08, 0.26,  0.065, 0.33);
+      // Squash tail (slightly flat with rounded corners)
+      shape.quadraticCurveTo(0.04, 0.37,  0, 0.37);
+      // Left rail (mirror)
+      shape.quadraticCurveTo(-0.04, 0.37,  -0.065, 0.33);
+      shape.bezierCurveTo(-0.08, 0.26,  -0.09, 0.12,  -0.09, -0.05);
+      shape.bezierCurveTo(-0.085, -0.2,  -0.03, -0.38,  0, -0.45);
+
+      const extrudeSettings = {
+        depth: 0.02,
+        bevelEnabled: true,
+        bevelThickness: 0.005,
+        bevelSize: 0.004,
+        bevelSegments: 3,
+      };
+
+      // ── Deck (main body) ──
+      const deckGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const deckMat = new THREE.MeshStandardMaterial({
+        color: 0x1a1a2e,
+        metalness: 0.6,
+        roughness: 0.35,
+        transparent: true,
+        opacity: 0.85,
+      });
+      const deckMesh = new THREE.Mesh(deckGeo, deckMat);
+      // Rotate to lie flat in XZ plane: shape x→x, shape y→-z, extrude z→y
+      deckMesh.rotation.x = -Math.PI / 2;
+      deckMesh.position.y = -0.01; // centre thickness on board origin
+      board.object3D.add(deckMesh);
+
+      // ── Deck top accent (slightly lighter surface) ──
+      const topGeo = new THREE.ShapeGeometry(shape);
+      const topMat = new THREE.MeshStandardMaterial({
+        color: 0x16213e,
+        metalness: 0.4,
+        roughness: 0.5,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide,
+      });
+      const topMesh = new THREE.Mesh(topGeo, topMat);
+      topMesh.rotation.x = -Math.PI / 2;
+      topMesh.position.y = 0.016;
+      board.object3D.add(topMesh);
+
+      // ── Stringer (thin line nose to tail on deck) ──
+      const stringerGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0.017, 0.44),   // nose
+        new THREE.Vector3(0, 0.017, -0.36),   // tail
+      ]);
+      const stringerMat = new THREE.LineBasicMaterial({
+        color: 0x4488aa,
+        transparent: true,
+        opacity: 0.25,
+      });
+      board.object3D.add(new THREE.Line(stringerGeo, stringerMat));
+
+      // ── Thruster glow (additive plane underneath) ──
+      const glowGeo = new THREE.PlaneGeometry(0.1, 0.5);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0x44aaff,
+        transparent: true,
+        opacity: 0.1,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+      glowMesh.rotation.x = -Math.PI / 2;
+      glowMesh.position.y = -0.015;
+      glowMesh.position.z = 0.05;
+      board.object3D.add(glowMesh);
+
+      // ── Centre fin ──
+      const finShape = new THREE.Shape();
+      finShape.moveTo(0, 0);
+      finShape.lineTo(0.04, 0);
+      finShape.lineTo(0.06, -0.035);
+      finShape.lineTo(0.01, -0.04);
+      finShape.lineTo(0, 0);
+      const finGeo = new THREE.ShapeGeometry(finShape);
+      const finMat = new THREE.MeshStandardMaterial({
+        color: 0x0f3460,
+        metalness: 0.8,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide,
+      });
+      const finMesh = new THREE.Mesh(finGeo, finMat);
+      finMesh.position.set(-0.02, -0.012, -0.22);
+      board.object3D.add(finMesh);
+    });
+
     this.container.appendChild(board);
+    this.board = board;
 
     const scene = document.querySelector('a-scene');
     if (scene) scene.appendChild(this.container);
