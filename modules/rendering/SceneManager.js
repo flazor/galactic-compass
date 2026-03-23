@@ -49,7 +49,141 @@ export class SceneManager {
       throw new Error(`Missing scene elements: ${missing.join(', ')}`);
     }
 
+    this.buildRealisticSun();
+
     return true;
+  }
+
+  buildRealisticSun() {
+    const sunEl = document.getElementById('sun-sphere');
+    if (!sunEl) return;
+
+    const buildSun = () => {
+      const obj = sunEl.object3D;
+
+      // Core — pure white disk (sun in vacuum is blindingly white)
+      const coreGeo = new THREE.SphereGeometry(7, 32, 24);
+      const coreMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+      obj.add(new THREE.Mesh(coreGeo, coreMat));
+
+      // Thin corona — tight Fresnel glow hugging the limb (no atmospheric scatter)
+      const glowGeo = new THREE.SphereGeometry(18, 32, 24);
+      const glowMat = new THREE.ShaderMaterial({
+        uniforms: {
+          glowColor:     { value: new THREE.Color(0xFFEEDD) },
+          falloff:       { value: 0.12 },
+          sharpness:     { value: 0.3 },
+          internalRadius: { value: 6.0 },
+        },
+        vertexShader: `
+          varying vec3 vWorldPos;
+          varying vec3 vWorldNormal;
+          void main() {
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+            vWorldPos = worldPos.xyz;
+            vWorldNormal = (modelMatrix * vec4(normal, 0.0)).xyz;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 glowColor;
+          uniform float falloff;
+          uniform float sharpness;
+          uniform float internalRadius;
+          varying vec3 vWorldPos;
+          varying vec3 vWorldNormal;
+          void main() {
+            vec3 normal = normalize(vWorldNormal);
+            if (!gl_FrontFacing) normal *= -1.0;
+            vec3 viewDir = normalize(cameraPosition - vWorldPos);
+            float fresnel = dot(viewDir, normal);
+            fresnel = pow(fresnel, internalRadius + 0.1);
+            float edge = smoothstep(0.0, falloff, fresnel);
+            float glow = fresnel + fresnel * sharpness;
+            glow *= edge;
+            gl_FragColor = vec4(clamp(glowColor * fresnel, 0.0, 1.0),
+                               clamp(glow, 0.0, 1.0));
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      obj.add(new THREE.Mesh(glowGeo, glowMat));
+
+      // Lens flare ghosts — additive circles along the sun-screen center axis
+      // Placed close to camera (distance 5) so sizes are in screen-relative units
+      const FLARE_DIST = 5;
+      const flareDefs = [
+        { t: 0.2,  radius: 0.04, color: 0xFFEECC, opacity: 0.35 },
+        { t: 0.45, radius: 0.08, color: 0xAADDFF, opacity: 0.15 },
+        { t: 0.7,  radius: 0.025, color: 0xFFCCAA, opacity: 0.30 },
+        { t: 1.1,  radius: 0.06, color: 0x88CCFF, opacity: 0.12 },
+        { t: 1.5,  radius: 0.12, color: 0xFFDDEE, opacity: 0.08 },
+      ];
+
+      const sceneObj = sunEl.sceneEl.object3D;
+      const flares = flareDefs.map(def => {
+        const geo = new THREE.CircleGeometry(def.radius, 24);
+        const mat = new THREE.MeshBasicMaterial({
+          color: def.color,
+          transparent: true,
+          opacity: def.opacity,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.renderOrder = 999;
+        sceneObj.add(mesh);
+        return { mesh, t: def.t, baseOpacity: def.opacity };
+      });
+
+      // Reusable vectors for per-frame flare update
+      const _sunWorld = new THREE.Vector3();
+      const _camFwd = new THREE.Vector3();
+
+      const updateFlares = () => {
+        requestAnimationFrame(updateFlares);
+        const cam = sunEl.sceneEl.camera;
+        if (!cam) return;
+
+        sunEl.object3D.getWorldPosition(_sunWorld);
+        const sunDir = _sunWorld.clone().normalize();
+
+        // Check if sun is in front of camera
+        cam.getWorldDirection(_camFwd);
+        const dot = sunDir.dot(_camFwd);
+        const behind = dot < 0;
+
+        flares.forEach(f => {
+          if (behind) { f.mesh.visible = false; return; }
+          f.mesh.visible = true;
+
+          // Ghost direction: mirror sun direction through camera forward axis
+          // ghostDir = 2 * dot(sunDir, camFwd) * camFwd - sunDir
+          const ghostDir = _camFwd.clone().multiplyScalar(2 * dot).sub(sunDir);
+          // Interpolate between sun direction and ghost direction by t
+          const dir = sunDir.clone().lerp(ghostDir, f.t);
+          f.mesh.position.copy(dir.normalize().multiplyScalar(FLARE_DIST));
+          f.mesh.quaternion.copy(cam.quaternion);
+
+          // Fade based on how centered the sun is (brighter when sun is near center)
+          const sunNDC = _sunWorld.clone().project(cam);
+          const offCenter = Math.sqrt(sunNDC.x * sunNDC.x + sunNDC.y * sunNDC.y);
+          f.mesh.material.opacity = f.baseOpacity * Math.max(0, 1 - offCenter * 0.6);
+        });
+      };
+      requestAnimationFrame(updateFlares);
+    };
+
+    if (sunEl.hasLoaded) {
+      buildSun();
+    } else {
+      sunEl.addEventListener('loaded', buildSun);
+    }
   }
 
   applySkyboxRotation(compassCorrection, galacticRotations) {
