@@ -15,6 +15,14 @@ import { Coordinates } from '../../../cosmic-core/src/astronomy/Coordinates.js';
 const C            = 299792.458;
 const PROJECT_DIST = 5;
 const LOCK_RADIUS  = 60;
+const LABEL_FADE_START = 120;
+const LABEL_FADE_END   = 40;
+
+const CELESTIAL_BODIES = [
+  { id: 'sun-sphere',        name: 'SOL',    type: 'G2V MAIN SEQUENCE',    dist: '1.00 AU · 150M km' },
+  { id: 'moon-sphere',       name: 'LUNA',   type: 'NATURAL SATELLITE',    dist: '384,400 km' },
+  { id: 'black-hole-sphere', name: 'SGR A*', type: 'SUPERMASSIVE BLACK HOLE<br>Milky Way Center', dist: '26,000 ly' },
+];
 
 function fmtSpd(v) { return v < 1 ? v.toFixed(3) : v < 10 ? v.toFixed(2) : v.toFixed(1); }
 function fmtDist(km) {
@@ -43,6 +51,7 @@ export class MarkersMode {
     this.levelData  = [];   // [{ name, velocity, azDeg, altDeg }]
     this.reticleEl  = null;
     this.panelEl    = null;
+    this.celLabels  = [];
     this.lastLat    = null;
     this.lastLon    = null;
     this.lastDate   = null;
@@ -57,11 +66,13 @@ export class MarkersMode {
     if (!this.reticleEl) this._build();
     this.reticleEl.style.display = '';
     this.panelEl.style.display   = '';
+    this.celLabels.forEach(l => l.dom.style.display = '');
   }
 
   deactivate() {
     if (this.reticleEl) this.reticleEl.style.display = 'none';
     if (this.panelEl)   this.panelEl.style.display   = 'none';
+    this.celLabels.forEach(l => l.dom.style.display = 'none');
   }
 
   /* ── data (≈1 Hz) ──────────────────────────────────────── */
@@ -163,6 +174,9 @@ export class MarkersMode {
       const el = document.getElementById('wf-dist');
       if (el) el.textContent = fmtDist(this.resultant.magnitude * elapsed);
     }
+
+    /* ── celestial labels ── */
+    this._updateCelestialLabels(scene.camera, hw, hh);
   }
 
   /* ── DOM ────────────────────────────────────────────────── */
@@ -192,6 +206,7 @@ export class MarkersMode {
     this.panelEl = document.createElement('div');
     this.panelEl.id = 'hud-panel';
     this.panelEl.innerHTML = `
+      <div class="wf-label" id="wf-label"></div>
       <div class="wf-top">
         <span class="wf-left"><span class="wf-speed" id="wf-speed">---</span> <span class="wf-unit">km/s</span></span>
         <span class="wf-right"><span class="wf-dist" id="wf-dist">0</span> <span class="wf-unit">km</span></span>
@@ -201,11 +216,70 @@ export class MarkersMode {
         <span class="wf-alt" id="wf-alt">---°</span>
       </div>`;
     document.body.appendChild(this.panelEl);
+
+    /* ── Celestial body labels ── */
+    this.celLabels = CELESTIAL_BODIES.map(body => {
+      const div = document.createElement('div');
+      div.className = 'cel-label';
+      const azAltId = `cel-azalt-${body.id}`;
+      div.innerHTML = `
+        <div class="cel-name">${body.name}</div>
+        <div class="cel-type">${body.type}</div>
+        <div class="cel-data">
+          ${body.dist}<br>
+          <span id="${azAltId}">---</span>
+        </div>`;
+      document.body.appendChild(div);
+      return {
+        id: body.id,
+        dom: div,
+        azAltEl: div.querySelector(`#${azAltId}`),
+      };
+    });
+  }
+
+  _updateCelestialLabels(camera, hw, hh) {
+    const _pos = new THREE.Vector3();
+    this.celLabels.forEach(label => {
+      const el = document.getElementById(label.id);
+      if (!el?.object3D) { label.dom.style.opacity = '0'; return; }
+
+      el.object3D.updateWorldMatrix(true, false);
+      el.object3D.getWorldPosition(_pos);
+      const p = _pos.clone().project(camera);
+
+      if (p.z > 1) { label.dom.style.opacity = '0'; return; }
+
+      const sx = hw + p.x * hw;
+      const sy = hh - p.y * hh;
+      const dx = sx - hw, dy = sy - hh;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const opacity = Math.max(0, Math.min(1,
+        (LABEL_FADE_START - dist) / (LABEL_FADE_START - LABEL_FADE_END)));
+      label.dom.style.opacity = opacity.toFixed(3);
+      label.dom.style.transform = `translate(${sx + 20}px, ${sy - 30}px)`;
+
+      // Update az/alt from world position
+      if (opacity > 0.01) {
+        const len = _pos.length();
+        const alt = Math.asin(_pos.y / len);
+        const az  = Math.atan2(-_pos.x, -_pos.z);
+        const azDeg  = ((Coordinates.toDegrees(az) % 360) + 360) % 360;
+        const altDeg = Coordinates.toDegrees(alt);
+        const sign = altDeg >= 0 ? '+' : '';
+        label.azAltEl.textContent = `${azDeg.toFixed(1)}° ${sign}${altDeg.toFixed(1)}°`;
+      }
+    });
   }
 
   _rebuildRows() {
     if (!this.panelEl || !this.resultant) return;
     const m = this.resultant.magnitude;
+
+    // Label = highest active level name
+    const top = this.levelData[this.levelData.length - 1];
+    this._s('wf-label', top ? top.name.toUpperCase() : '');
 
     this._s('wf-speed', m < 10 ? m.toFixed(2) : m.toFixed(1));
     this._s('wf-az', `${this.resultant.azimuthDegrees.toFixed(1)}°`);

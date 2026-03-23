@@ -393,6 +393,70 @@ button:hover, button:active {
   display: none;
 }
 
+/* ── Celestial body labels (fade in near reticle) ── */
+.cel-label {
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 9995;
+  will-change: transform, opacity;
+  padding-left: 10px;
+  border-left: 1px solid rgba(68, 170, 255, 0.6);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.cel-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--hud-cyan);
+  letter-spacing: 0.12em;
+  text-shadow: var(--hud-glow);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.cel-type {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: rgba(160, 200, 255, 0.6);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cel-data {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: rgba(180, 220, 255, 0.85);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+.cel-data span {
+  color: var(--hud-white);
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* ── Resultant HUD label (above window frame) ── */
+.wf-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--hud-cyan);
+  letter-spacing: 0.1em;
+  text-shadow: var(--hud-glow);
+  white-space: nowrap;
+  padding-bottom: 4px;
+}
+
 /* === Debug Panel === */
 #debugOutput {
   font-family: 'Share Tech Mono', monospace;
