@@ -1,26 +1,64 @@
 /**
- * ParticlesMode - Multiple particle streams based on resultant velocity and celestial positions:
- *   1. Blue exhaust from the hoverboard at viewer's feet, streaming opposite to travel
- *   2. Yellow particles from the resultant marker, flying toward the camera
- *   3. (Level 2+) Silver particles from the moon, parallel to incoming
- *   4. (Level 3+) Warm white particles from the sun, parallel to incoming
+ * ParticlesMode — Photorealistic spark particles
+ *
+ * All particles are hot sparks: bright white/yellow core fading through
+ * orange to red as they cool, shrinking as they die. Additive blending
+ * gives a natural glow against the dark sky.
+ *
+ *   1. Exhaust sparks — stream backward from hoverboard
+ *   2. Incoming sparks — fly in from the direction of travel
+ *   3. Moon sparks (level 2+) — drift from the moon's direction
+ *   4. Sun sparks (level 3+) — drift from the sun's direction
  */
 import { calculateVectorSum } from '../../../cosmic-core/src/calculations/CelestialCalculations.js';
 import { Coordinates } from '../../../cosmic-core/src/astronomy/Coordinates.js';
 
-const MAX_EXHAUST   = 80;
-const MAX_INCOMING  = 40;
-const MAX_MOON      = 30;
-const MAX_SUN       = 30;
-const BOARD_HALF    = 0.2;
-const BOARD_Y       = -1.0;
-const MARKER_DIST   = 2.0;
-const MARKER_SPREAD = 0.3;
-const CELESTIAL_SPREAD = 0.03;
-const EXHAUST_LIFETIME  = 4;
-const INCOMING_LIFETIME = 15;
-const CELESTIAL_LIFETIME = 15;
-const BASE_SPEED = 1.5;
+// Particle counts
+const MAX_EXHAUST  = 60;
+const MAX_INCOMING = 30;
+const MAX_MOON     = 20;
+const MAX_SUN      = 20;
+
+// Layout
+const BOARD_HALF   = 0.2;
+const BOARD_Y      = -1.0;
+const SPAWN_DIST   = 2.5;
+const SPREAD       = 0.25;
+const CEL_SPREAD   = 0.04;
+
+// Timing
+const EXHAUST_LIFE  = 2.5;
+const INCOMING_LIFE = 8;
+const CEL_LIFE      = 10;
+const BASE_SPEED    = 1.5;
+
+// Spark colour ramp (t: 0 = birth, 1 = death)
+// white → yellow → orange → red → dark
+const RAMP = [
+  { t: 0.0, r: 1.0,  g: 0.95, b: 0.85 },  // hot white
+  { t: 0.15, r: 1.0,  g: 0.85, b: 0.4  },  // bright yellow
+  { t: 0.4, r: 1.0,  g: 0.5,  b: 0.1  },  // orange
+  { t: 0.7, r: 0.8,  g: 0.15, b: 0.0  },  // red
+  { t: 1.0, r: 0.3,  g: 0.05, b: 0.0  },  // ember
+];
+
+function sparkColor(t) {
+  t = Math.max(0, Math.min(1, t));
+  let i = 0;
+  while (i < RAMP.length - 2 && RAMP[i + 1].t < t) i++;
+  const a = RAMP[i], b = RAMP[i + 1];
+  const f = (t - a.t) / (b.t - a.t);
+  const r = Math.round((a.r + (b.r - a.r) * f) * 255);
+  const g = Math.round((a.g + (b.g - a.g) * f) * 255);
+  const bl = Math.round((a.b + (b.b - a.b) * f) * 255);
+  return `rgb(${r},${g},${bl})`;
+}
+
+function sparkOpacity(t) {
+  if (t < 0.1) return t / 0.1;        // fade in
+  if (t > 0.6) return 1 - (t - 0.6) / 0.4;  // fade out
+  return 1;
+}
 
 export class ParticlesMode {
   constructor(sceneManager, uiControls, levelManager) {
@@ -54,10 +92,10 @@ export class ParticlesMode {
       this.container.remove();
       this.container = null;
     }
-    this.exhaustParticles   = [];
-    this.incomingParticles  = [];
-    this.moonParticles      = [];
-    this.sunParticles       = [];
+    this.exhaustParticles  = [];
+    this.incomingParticles = [];
+    this.moonParticles     = [];
+    this.sunParticles      = [];
     this.uiControls?.debugLog('Particles mode deactivated');
   }
 
@@ -71,8 +109,6 @@ export class ParticlesMode {
   onLevelChange(activeLevels) {
     if (this.lastLat == null) return;
     this.updateDirections();
-
-    // Clear streams that are no longer active at this level
     const maxLevel = this.levelManager?.getMaxLevel() ?? 1;
     if (maxLevel < 2) this.clearStream(this.moonParticles);
     if (maxLevel < 3) this.clearStream(this.sunParticles);
@@ -80,120 +116,135 @@ export class ParticlesMode {
 
   updateDirections() {
     if (!this.levelManager) return;
-
     const maxLevel = this.levelManager.getMaxLevel();
     const vectorSumData = calculateVectorSum(this.lastLat, this.lastLon, this.lastDate, maxLevel);
     if (!vectorSumData?.resultant) return;
 
-    const resultant = vectorSumData.resultant;
-    this.speed = resultant.magnitude;
-
+    this.speed = vectorSumData.resultant.magnitude;
     const corrRad = Coordinates.toRadians(this.sceneManager.compassCorrection ?? 0);
-
     this.moveDir.copy(
-      azAltToWorldDir(resultant.azimuthDegrees, resultant.altitudeDegrees, corrRad)
+      azAltToWorldDir(vectorSumData.resultant.azimuthDegrees, vectorSumData.resultant.altitudeDegrees, corrRad)
     );
     this.exhaustDir.copy(this.moveDir).negate();
-
   }
 
   update(dt) {
     if (!this.container || dt <= 0) return;
 
-    const visualSpeed = BASE_SPEED * Math.log10(Math.max(this.speed, 1) + 1);
+    const vs = BASE_SPEED * Math.log10(Math.max(this.speed, 1) + 1);
     const maxLevel = this.levelManager?.getMaxLevel() ?? 1;
-    const incomingMove = this.exhaustDir.clone().multiplyScalar(visualSpeed * 1.2 * dt);
+    const inMove = this.exhaustDir.clone().multiplyScalar(vs * 1.2 * dt);
 
-    // 1. Exhaust (blue, from hoverboard)
+    // 1. Exhaust sparks
     while (this.exhaustParticles.length < MAX_EXHAUST) this.spawnExhaust();
-    this.moveAndCull(this.exhaustParticles,
-      this.exhaustDir.clone().multiplyScalar(visualSpeed * dt), dt,
-      p => p.age > p.lifetime);
+    this.advanceSparks(this.exhaustParticles,
+      this.exhaustDir.clone().multiplyScalar(vs * dt), dt);
 
-    // 2. Incoming (yellow, from resultant marker)
+    // 2. Incoming sparks
     while (this.incomingParticles.length < MAX_INCOMING) this.spawnIncoming();
-    this.moveAndCull(this.incomingParticles, incomingMove, dt,
-      p => p.age > p.lifetime || p.position.length() < 0.2);
+    this.advanceSparks(this.incomingParticles, inMove, dt);
 
-    // 3. Moon (silver, level 2+)
+    // 3. Moon sparks (level 2+)
     if (maxLevel >= 2) {
       const moonDir = this.getWorldDir('moon-sphere');
       if (moonDir) {
         while (this.moonParticles.length < MAX_MOON)
-          this.spawnCelestial(moonDir, '#DDDDDD', this.moonParticles);
-        this.moveAndCull(this.moonParticles, incomingMove, dt,
-          p => p.age > p.lifetime || p.position.length() < 0.2);
+          this.spawnCelestial(moonDir, this.moonParticles);
+        this.advanceSparks(this.moonParticles, inMove, dt);
       }
     }
 
-    // 4. Sun (warm white, level 3+)
+    // 4. Sun sparks (level 3+)
     if (maxLevel >= 3) {
       const sunDir = this.getWorldDir('sun-sphere');
       if (sunDir) {
         while (this.sunParticles.length < MAX_SUN)
-          this.spawnCelestial(sunDir, '#FFFFDD', this.sunParticles);
-        this.moveAndCull(this.sunParticles, incomingMove, dt,
-          p => p.age > p.lifetime || p.position.length() < 0.2);
+          this.spawnCelestial(sunDir, this.sunParticles);
+        this.advanceSparks(this.sunParticles, inMove, dt);
       }
     }
-
   }
 
-  moveAndCull(array, movement, dt, shouldDespawn) {
+  /** Move particles, update spark colour/size/opacity, cull dead ones */
+  advanceSparks(array, movement, dt) {
     for (let i = array.length - 1; i >= 0; i--) {
       const p = array[i];
       p.age += dt;
-      p.position.add(movement);
-      if (p.el.object3D) p.el.object3D.position.copy(p.position);
-      if (shouldDespawn(p)) {
+      const t = p.age / p.lifetime;
+
+      if (t > 1 || p.position.length() < 0.15) {
         this.container.removeChild(p.el);
         array.splice(i, 1);
+        continue;
+      }
+
+      // Move
+      p.position.add(movement);
+      // Slight gravity on exhaust (downward drift)
+      if (p.gravity) p.position.y -= 0.15 * dt;
+
+      if (p.el.object3D) {
+        p.el.object3D.position.copy(p.position);
+        // Shrink as it cools
+        const scale = p.startScale * (1 - t * 0.7);
+        p.el.object3D.scale.setScalar(scale);
+      }
+
+      // Update colour and opacity
+      const mat = p.el.getObject3D('mesh')?.material;
+      if (mat) {
+        mat.color.setStyle(sparkColor(t));
+        mat.opacity = sparkOpacity(t) * p.startOpacity;
       }
     }
   }
 
   spawnExhaust() {
     if (!this.container) return;
-    const el = document.createElement('a-sphere');
-    el.setAttribute('radius', 0.015);
-    el.setAttribute('color', '#AADDFF');
-    el.setAttribute('material', 'opacity: 0.6; transparent: true');
-
     const x = (Math.random() - 0.5) * BOARD_HALF * 2;
     const z = (Math.random() - 0.5) * BOARD_HALF * 2;
     const pos = new THREE.Vector3(x, BOARD_Y, z);
-    el.addEventListener('loaded', () => { if (el.object3D) el.object3D.position.copy(pos); });
-    this.container.appendChild(el);
-    this.exhaustParticles.push({ el, position: pos, age: 0,
-      lifetime: EXHAUST_LIFETIME * (0.5 + Math.random()) });
+    const size = 0.008 + Math.random() * 0.012;
+    this._spawn(pos, size, 0.9, EXHAUST_LIFE, this.exhaustParticles, true);
   }
 
   spawnIncoming() {
     if (!this.container) return;
-    const pos = this.moveDir.clone().multiplyScalar(MARKER_DIST)
-      .add(perpendicularSpread(this.moveDir, MARKER_SPREAD));
-    this.spawnSphere(pos, 0.003, '#FFD700', 0.8, this.incomingParticles, INCOMING_LIFETIME);
+    const pos = this.moveDir.clone().multiplyScalar(SPAWN_DIST)
+      .add(perpendicularSpread(this.moveDir, SPREAD));
+    const size = 0.004 + Math.random() * 0.008;
+    this._spawn(pos, size, 0.85, INCOMING_LIFE, this.incomingParticles, false);
   }
 
-  spawnCelestial(dir, color, array) {
+  spawnCelestial(dir, array) {
     if (!this.container) return;
-    const pos = dir.clone().multiplyScalar(MARKER_DIST)
-      .add(perpendicularSpread(dir, CELESTIAL_SPREAD));
-    this.spawnSphere(pos, 0.008, color, 1.0, array, CELESTIAL_LIFETIME);
+    const pos = dir.clone().multiplyScalar(SPAWN_DIST)
+      .add(perpendicularSpread(dir, CEL_SPREAD));
+    const size = 0.006 + Math.random() * 0.01;
+    this._spawn(pos, size, 0.9, CEL_LIFE, array, false);
   }
 
-  spawnSphere(pos, radius, color, opacity, array, baseLifetime) {
+  _spawn(pos, radius, opacity, baseLife, array, gravity) {
     const el = document.createElement('a-sphere');
     el.setAttribute('radius', radius);
-    el.setAttribute('color', color);
-    el.setAttribute('material', `opacity: ${opacity}; transparent: true`);
-    el.addEventListener('loaded', () => { if (el.object3D) el.object3D.position.copy(pos); });
+    el.setAttribute('material',
+      'shader: flat; color: #FFF3E0; transparent: true; opacity: 0; ' +
+      'blending: additive; depthWrite: false');
+    el.addEventListener('loaded', () => {
+      if (el.object3D) el.object3D.position.copy(pos);
+    });
     this.container.appendChild(el);
-    array.push({ el, position: pos.clone(), age: 0,
-      lifetime: baseLifetime * (0.6 + Math.random() * 0.8) });
+    array.push({
+      el,
+      position: pos.clone(),
+      age: 0,
+      lifetime: baseLife * (0.5 + Math.random()),
+      startScale: 0.8 + Math.random() * 0.4,
+      startOpacity: opacity,
+      gravity,
+    });
   }
 
-  // Get the normalised world-space direction to a scene element (e.g. moon-sphere)
   getWorldDir(elementId) {
     const el = document.getElementById(elementId);
     if (!el?.object3D) return null;
@@ -212,6 +263,7 @@ export class ParticlesMode {
     this.container = document.createElement('a-entity');
     this.container.id = 'particles-mode-container';
 
+    // Hoverboard
     const board = document.createElement('a-plane');
     board.setAttribute('position', `0 ${BOARD_Y} 0`);
     board.setAttribute('rotation', '-90 0 0');
@@ -226,11 +278,6 @@ export class ParticlesMode {
   }
 }
 
-/**
- * Convert azimuth (degrees) + altitude (degrees) to an A-Frame world-space unit vector,
- * then rotate by compassCorrection (radians) around Y.
- * Compass convention: North = -X, East = -Z, Up = +Y.
- */
 function azAltToWorldDir(azDeg, altDeg, corrRad) {
   const az  = Coordinates.toRadians(azDeg);
   const alt = Coordinates.toRadians(altDeg);
@@ -243,9 +290,6 @@ function azAltToWorldDir(azDeg, altDeg, corrRad) {
   return v;
 }
 
-/**
- * Random offset within a disc perpendicular to dir.
- */
 function perpendicularSpread(dir, radius) {
   const arbitrary = Math.abs(dir.x) < 0.9
     ? new THREE.Vector3(1, 0, 0)

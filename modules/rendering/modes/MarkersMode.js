@@ -47,6 +47,7 @@ export class MarkersMode {
     this.lastLon    = null;
     this.lastDate   = null;
     this.startTime  = Date.now();
+    this.recalcTimer = 0;
   }
 
   /* ── lifecycle ─────────────────────────────────────────── */
@@ -146,6 +147,14 @@ export class MarkersMode {
       this.reticleEl.style.transform = `translate(${hw}px, ${hh}px)`;
       const angle = Math.atan2(dx, -dy) * (180 / Math.PI);
       if (svg) svg.style.transform = `rotate(${angle}deg)`;
+    }
+
+    /* ── recalculate az/alt every second ── */
+    this.recalcTimer += dt;
+    if (this.recalcTimer >= 1 && this.lastLat != null) {
+      this.recalcTimer = 0;
+      this.lastDate = new Date();
+      this._recalc();
     }
 
     /* ── tick distance ── */
