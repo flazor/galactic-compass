@@ -14,10 +14,10 @@ import { calculateVectorSum } from '../../../cosmic-core/src/calculations/Celest
 import { Coordinates } from '../../../cosmic-core/src/astronomy/Coordinates.js';
 
 // Particle counts
-const MAX_EXHAUST  = 60;
-const MAX_INCOMING = 30;
-const MAX_MOON     = 20;
-const MAX_SUN      = 20;
+const MAX_EXHAUST  = 40;
+const MAX_INCOMING = 10;
+const MAX_MOON     = 0;
+const MAX_SUN      = 0;
 
 // Layout
 const BOARD_HALF   = 0.2;
@@ -216,7 +216,7 @@ export class ParticlesMode {
     const pos = new THREE.Vector3(x, -0.01, z);
     this.board.object3D.updateMatrixWorld(true);
     pos.applyMatrix4(this.board.object3D.matrixWorld);
-    const size = 0.006 + Math.random() * 0.014;
+    const size = 0.002 + Math.random() * 0.004;
     this._spawn(pos, size, 0.9, EXHAUST_LIFE, this.exhaustParticles, true);
   }
 
@@ -224,7 +224,7 @@ export class ParticlesMode {
     if (!this.container) return;
     const pos = this.moveDir.clone().multiplyScalar(SPAWN_DIST)
       .add(perpendicularSpread(this.moveDir, SPREAD));
-    const size = 0.004 + Math.random() * 0.008;
+    const size = 0.002 + Math.random() * 0.004;
     this._spawn(pos, size, 0.85, INCOMING_LIFE, this.incomingParticles, false);
   }
 
