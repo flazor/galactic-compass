@@ -50,6 +50,7 @@ export class SceneManager {
     }
 
     this.buildRealisticSun();
+    this.buildRealisticMoon();
 
     return true;
   }
@@ -183,6 +184,82 @@ export class SceneManager {
       buildSun();
     } else {
       sunEl.addEventListener('loaded', buildSun);
+    }
+  }
+
+  buildRealisticMoon() {
+    const moonEl = document.getElementById('moon-sphere');
+    if (!moonEl) return;
+
+    const buildMoon = () => {
+      const obj = moonEl.object3D;
+
+      const moonGeo = new THREE.SphereGeometry(13, 32, 24);
+      const moonMat = new THREE.ShaderMaterial({
+        uniforms: {
+          sunDir: { value: new THREE.Vector3(1, 0, 0) },
+          baseColor: { value: new THREE.Color(0xD8D4CC) },
+        },
+        vertexShader: `
+          varying vec3 vWorldPos;
+          varying vec3 vWorldNormal;
+          void main() {
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+            vWorldPos = worldPos.xyz;
+            vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 sunDir;
+          uniform vec3 baseColor;
+          varying vec3 vWorldPos;
+          varying vec3 vWorldNormal;
+          void main() {
+            vec3 normal = normalize(vWorldNormal);
+
+            // Directional sun light (sun is effectively infinitely far)
+            float NdotL = dot(normal, sunDir);
+
+            // Soften the terminator
+            float diffuse = smoothstep(-0.05, 0.3, NdotL);
+
+            // Slight limb darkening on the lit side
+            vec3 viewDir = normalize(cameraPosition - vWorldPos);
+            float limb = dot(viewDir, normal);
+            diffuse *= mix(0.75, 1.0, limb);
+
+            // Earthshine on dark side
+            float ambient = 0.03;
+            vec3 color = baseColor * (ambient + diffuse * 0.97);
+            gl_FragColor = vec4(color, 1.0);
+          }
+        `,
+      });
+      obj.add(new THREE.Mesh(moonGeo, moonMat));
+
+      // Update sun direction uniform each frame for correct phase lighting
+      const sunContainer = document.getElementById('sun-container');
+      const _sunWorld = new THREE.Vector3();
+      const updateMoon = () => {
+        requestAnimationFrame(updateMoon);
+        if (!sunContainer) return;
+        // Get the sun's world position from sun-sphere inside sun-container
+        const sunSphere = sunContainer.querySelector('#sun-sphere');
+        if (sunSphere?.object3D) {
+          sunSphere.object3D.updateWorldMatrix(true, false);
+          sunSphere.object3D.getWorldPosition(_sunWorld);
+          // Pass as direction (sun is far enough to treat as directional light)
+          moonMat.uniforms.sunDir.value.copy(_sunWorld).normalize();
+        }
+      };
+      requestAnimationFrame(updateMoon);
+    };
+
+    if (moonEl.hasLoaded) {
+      buildMoon();
+    } else {
+      moonEl.addEventListener('loaded', buildMoon);
     }
   }
 
