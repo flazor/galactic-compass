@@ -306,32 +306,49 @@ export class ParticlesMode {
         bevelSegments: 3,
       };
 
-      // ── Deck (main body) ──
-      const deckGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      const deckMat = new THREE.MeshStandardMaterial({
-        color: 0x1a1a2e,
-        metalness: 0.6,
-        roughness: 0.35,
-        transparent: true,
-        opacity: 0.85,
-      });
-      const deckMesh = new THREE.Mesh(deckGeo, deckMat);
-      // Rotate to lie flat in XZ plane: shape x→x, shape y→-z, extrude z→y
-      deckMesh.rotation.x = -Math.PI / 2;
-      deckMesh.position.y = -0.01; // centre thickness on board origin
-      board.object3D.add(deckMesh);
-
-      // ── Deck top accent (slightly lighter surface) ──
-      const topGeo = new THREE.ShapeGeometry(shape);
-      const topMat = new THREE.MeshStandardMaterial({
-        color: 0x16213e,
-        metalness: 0.4,
-        roughness: 0.5,
-        transparent: true,
-        opacity: 0.6,
+      // ── Chrome ShaderMaterial — direct equirectangular sampling ──
+      // Bypasses Three.js PMREM pipeline so star reflections stay pixel-sharp
+      const chromeMat = new THREE.ShaderMaterial({
+        uniforms: {
+          envMap: { value: null },
+        },
+        vertexShader: `
+          varying vec3 vWorldNormal;
+          varying vec3 vWorldPosition;
+          void main() {
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPos.xyz;
+            vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D envMap;
+          varying vec3 vWorldNormal;
+          varying vec3 vWorldPosition;
+          void main() {
+            vec3 viewDir = normalize(vWorldPosition - cameraPosition);
+            vec3 reflDir = reflect(viewDir, normalize(vWorldNormal));
+            float phi = atan(reflDir.z, reflDir.x);
+            float theta = asin(clamp(reflDir.y, -1.0, 1.0));
+            vec2 uv = vec2(phi / (2.0 * 3.14159265) + 0.5, theta / 3.14159265 + 0.5);
+            vec3 color = texture2D(envMap, uv).rgb * 1.5 * vec3(0.85, 0.88, 0.95);
+            gl_FragColor = vec4(color, 1.0);
+          }
+        `,
         side: THREE.DoubleSide,
       });
-      const topMesh = new THREE.Mesh(topGeo, topMat);
+
+      // ── Deck (main body) ──
+      const deckGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const deckMesh = new THREE.Mesh(deckGeo, chromeMat);
+      deckMesh.rotation.x = -Math.PI / 2;
+      deckMesh.position.y = -0.01;
+      board.object3D.add(deckMesh);
+
+      // ── Deck top accent ──
+      const topGeo = new THREE.ShapeGeometry(shape);
+      const topMesh = new THREE.Mesh(topGeo, chromeMat);
       topMesh.rotation.x = -Math.PI / 2;
       topMesh.position.y = 0.016;
       board.object3D.add(topMesh);
@@ -372,17 +389,31 @@ export class ParticlesMode {
       finShape.lineTo(0.01, -0.04);
       finShape.lineTo(0, 0);
       const finGeo = new THREE.ShapeGeometry(finShape);
-      const finMat = new THREE.MeshStandardMaterial({
-        color: 0x0f3460,
-        metalness: 0.8,
-        roughness: 0.2,
-        transparent: true,
-        opacity: 0.7,
-        side: THREE.DoubleSide,
-      });
-      const finMesh = new THREE.Mesh(finGeo, finMat);
+      const finMesh = new THREE.Mesh(finGeo, chromeMat);
       finMesh.position.set(-0.02, -0.012, -0.22);
       board.object3D.add(finMesh);
+
+      // ── Load skybox texture for sharp chrome reflections ──
+      // Clone with LinearFilter + no mipmaps to prevent mip-level blurring
+      const tryEnvMap = () => {
+        const skyMesh = document.getElementById('a-sky')?.getObject3D('mesh');
+        const skyTex = skyMesh?.material?.map;
+        if (!skyTex?.image) return false;
+
+        const envTex = skyTex.clone();
+        envTex.minFilter = THREE.LinearFilter;
+        envTex.generateMipmaps = false;
+        envTex.needsUpdate = true;
+
+        chromeMat.uniforms.envMap.value = envTex;
+        chromeMat.needsUpdate = true;
+        return true;
+      };
+
+      if (!tryEnvMap()) {
+        document.getElementById('a-sky')
+          ?.addEventListener('materialtextureloaded', tryEnvMap);
+      }
     });
 
     this.container.appendChild(board);
