@@ -264,8 +264,9 @@ export class MarkersMode {
       if (opacity > 0.01) {
         const len = _pos.length();
         const alt = Math.asin(_pos.y / len);
-        const az  = Math.atan2(-_pos.x, -_pos.z);
-        const azDeg  = ((Coordinates.toDegrees(az) % 360) + 360) % 360;
+        const az  = Math.atan2(-_pos.z, -_pos.x);
+        const corr = this.sceneManager.compassCorrection ?? 0;
+        const azDeg  = ((Coordinates.toDegrees(az) + corr) % 360 + 360) % 360;
         const altDeg = Coordinates.toDegrees(alt);
         const sign = altDeg >= 0 ? '+' : '';
         label.azAltEl.textContent = `${azDeg.toFixed(1)}° ${sign}${altDeg.toFixed(1)}°`;
