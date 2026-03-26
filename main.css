@@ -88,6 +88,31 @@ button:hover, button:active {
   opacity: 0.9;
 }
 
+/* ── Celestial target lock-on ── */
+.reticle-target {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--hud-cyan);
+  letter-spacing: 0.15em;
+  text-shadow: var(--hud-glow);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#hud-reticle.target-lock .reticle-target { opacity: 1; }
+#hud-reticle.target-lock .reticle-svg {
+  filter: drop-shadow(0 0 10px rgba(68, 170, 255, 0.5));
+}
+#hud-reticle.target-lock .reticle-svg circle[r="40"] {
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+
 /* ── Wireframe window (projected) ── */
 #hud-panel {
   position: fixed;

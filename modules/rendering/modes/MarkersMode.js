@@ -15,6 +15,8 @@ import { Coordinates } from '../../../cosmic-core/src/astronomy/Coordinates.js';
 const C            = 299792.458;
 const PROJECT_DIST = 5;
 const LOCK_RADIUS  = 60;
+const RETICLE_LOCK_PX  = 53;   // outer circle pixel radius (r=40 in 120-unit viewBox at 160px)
+const TARGET_RELEASE   = 100;  // release hysteresis — must drag further than capture
 const LABEL_FADE_START = 120;
 const LABEL_FADE_END   = 40;
 
@@ -52,6 +54,8 @@ export class MarkersMode {
     this.reticleEl  = null;
     this.panelEl    = null;
     this.celLabels  = [];
+    this.targetLock    = null;   // locked celestial label ref
+    this.targetLockPos = null;   // { x, y } screen coords of locked body
     this.lastLat    = null;
     this.lastLon    = null;
     this.lastDate   = null;
@@ -144,20 +148,29 @@ export class MarkersMode {
       && ty > pad && ty < window.innerHeight - pad;
     this.panelEl.style.opacity = onScreen ? '1' : '0.15';
 
-    /* ── lock ── */
-    const locked = dist < LOCK_RADIUS && onScreen;
-    this.panelEl.classList.toggle('locked', locked);
-    this.reticleEl.classList.toggle('locked', locked);
+    /* ── panel lock ── */
+    const panelLocked = dist < LOCK_RADIUS && onScreen;
+    this.panelEl.classList.toggle('locked', panelLocked);
 
-    /* ── reticle ── */
+    /* ── celestial labels + target lock-on (before reticle positioning) ── */
+    this._updateCelestialLabels(scene.camera, hw, hh);
+
+    /* ── reticle position: target-lock > panel-lock > screen centre ── */
     const svg = this.reticleEl.querySelector('.reticle-svg');
-    if (locked) {
+    if (this.targetLockPos) {
+      this.reticleEl.style.transform =
+        `translate(${this.targetLockPos.x}px, ${this.targetLockPos.y}px)`;
+      if (svg) svg.style.transform = 'rotate(0deg)';
+      this.reticleEl.classList.add('locked');
+    } else if (panelLocked) {
       this.reticleEl.style.transform = `translate(${px}px, ${py}px)`;
       if (svg) svg.style.transform = 'rotate(0deg)';
+      this.reticleEl.classList.add('locked');
     } else {
       this.reticleEl.style.transform = `translate(${hw}px, ${hh}px)`;
       const angle = Math.atan2(dx, -dy) * (180 / Math.PI);
       if (svg) svg.style.transform = `rotate(${angle}deg)`;
+      this.reticleEl.classList.remove('locked');
     }
 
     /* ── recalculate az/alt every second ── */
@@ -174,9 +187,6 @@ export class MarkersMode {
       const el = document.getElementById('wf-dist');
       if (el) el.textContent = fmtDist(this.resultant.magnitude * elapsed);
     }
-
-    /* ── celestial labels ── */
-    this._updateCelestialLabels(scene.camera, hw, hh);
   }
 
   /* ── DOM ────────────────────────────────────────────────── */
@@ -199,7 +209,8 @@ export class MarkersMode {
         <path d="M-5,44 L0,53 L5,44"    fill="none" stroke="#4af" stroke-width="0.5" opacity="0.15"/>
         <circle cx="0" cy="0" r="2" fill="none" stroke="#4af" stroke-width="0.6" opacity="0.5"/>
         <circle cx="0" cy="0" r="0.7" fill="#e0f0ff"/>
-      </svg>`;
+      </svg>
+      <div class="reticle-target"></div>`;
     document.body.appendChild(this.reticleEl);
 
     /* ── Window frame ── */
@@ -240,6 +251,9 @@ export class MarkersMode {
 
   _updateCelestialLabels(camera, hw, hh) {
     const _pos = new THREE.Vector3();
+    // Collect screen positions for all visible bodies
+    const bodyScreens = [];
+
     this.celLabels.forEach(label => {
       const el = document.getElementById(label.id);
       if (!el?.object3D) { label.dom.style.opacity = '0'; return; }
@@ -260,6 +274,8 @@ export class MarkersMode {
       label.dom.style.opacity = opacity.toFixed(3);
       label.dom.style.transform = `translate(${sx + 20}px, ${sy - 30}px)`;
 
+      bodyScreens.push({ label, sx, sy, distFromCentre: dist });
+
       // Update az/alt from world position
       if (opacity > 0.01) {
         const len = _pos.length();
@@ -272,6 +288,45 @@ export class MarkersMode {
         label.azAltEl.textContent = `${azDeg.toFixed(1)}° ${sign}${altDeg.toFixed(1)}°`;
       }
     });
+
+    // ── Sticky target lock-on ──
+    // Release: locked body went behind camera or was dragged far from screen centre
+    if (this.targetLock) {
+      const cur = bodyScreens.find(b => b.label === this.targetLock);
+      if (!cur || cur.distFromCentre > TARGET_RELEASE) {
+        this.targetLock = null;
+        this.targetLockPos = null;
+      } else {
+        this.targetLockPos = { x: cur.sx, y: cur.sy };
+      }
+    }
+
+    // Capture: closest body within reticle circle of screen centre
+    if (!this.targetLock) {
+      let best = null, bestDist = Infinity;
+      for (const b of bodyScreens) {
+        if (b.distFromCentre < RETICLE_LOCK_PX && b.distFromCentre < bestDist) {
+          best = b;
+          bestDist = b.distFromCentre;
+        }
+      }
+      if (best) {
+        this.targetLock = best.label;
+        this.targetLockPos = { x: best.sx, y: best.sy };
+      }
+    }
+
+    // Update reticle target-lock visuals
+    this.reticleEl.classList.toggle('target-lock', !!this.targetLock);
+    const targetEl = this.reticleEl.querySelector('.reticle-target');
+    if (targetEl) {
+      if (this.targetLock) {
+        const body = CELESTIAL_BODIES.find(b => b.id === this.targetLock.id);
+        targetEl.textContent = body?.name || '';
+      } else {
+        targetEl.textContent = '';
+      }
+    }
   }
 
   _rebuildRows() {
